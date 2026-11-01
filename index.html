@@ -3,730 +3,158 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Michis: un gato por color</title>
+<title>Juegos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --paper:#eceef6; --surface:#f8f9fd; --chip:#e2e5f1; --ink:#2b2851; --muted:#6b6890;
-  --board:#ffffff; --edge:rgba(43,40,81,.08); --lift:0 10px 28px rgba(43,40,81,.10);
-  --nose:#ff6f91; --heart:#ee3d4f; --heart-off:#d6d8e6; --good:#1f9e55;
-  --scrim:rgba(23,22,42,.5);
+  --paper:#eceef6; --surface:#f8f9fd; --chip:#e7e9f4; --ink:#2b2851; --muted:#6b6890;
+  --edge:rgba(43,40,81,.08); --lift:0 12px 28px rgba(43,40,81,.10);
+  --nose:#ff6f91; --play:#2b2851;
   color-scheme:light;
   box-sizing:border-box;
-  padding-top:env(safe-area-inset-top,0px);
-  padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
+  :root{
     --paper:#17162a; --surface:#221f3a; --chip:#2c2948; --ink:#ecebfa; --muted:#a6a3c8;
-    --board:#1f1c35; --edge:rgba(236,235,250,.07); --lift:0 10px 28px rgba(0,0,0,.4);
-    --heart-off:#3b3858; --good:#4cd685; --scrim:rgba(0,0,0,.62);
+    --edge:rgba(236,235,250,.08); --lift:0 12px 28px rgba(0,0,0,.35);
+    --play:#ecebfa;
     color-scheme:dark;
   }
 }
-:root[data-theme="dark"]{
-  --paper:#17162a; --surface:#221f3a; --chip:#2c2948; --ink:#ecebfa; --muted:#a6a3c8;
-  --board:#1f1c35; --edge:rgba(236,235,250,.07); --lift:0 10px 28px rgba(0,0,0,.4);
-  --heart-off:#3b3858; --good:#4cd685; --scrim:rgba(0,0,0,.62);
-  color-scheme:dark;
-}
-html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+html{height:100%}
 *,*::before,*::after{box-sizing:inherit}
 body{
-  margin:0;min-height:100%;background:var(--paper);color:var(--ink);
+  margin:0;min-height:100%;color:var(--ink);
   font-family:"Baloo 2",ui-rounded,"SF Pro Rounded","Segoe UI",Roboto,system-ui,sans-serif;
+  background:
+    radial-gradient(900px 420px at 15% -10%, rgba(255,111,145,.28), transparent 60%),
+    radial-gradient(700px 380px at 110% 0%, rgba(148,121,214,.30), transparent 55%),
+    var(--paper);
   -webkit-tap-highlight-color:transparent;
 }
-button{font:inherit;color:inherit}
-:focus-visible{outline:3px solid var(--nose);outline-offset:2px}
-
-.app{max-width:520px;margin:0 auto;padding:14px 14px 22px;display:flex;flex-direction:column;gap:12px}
-
-/* Cabecera */
-.top{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.brand{display:flex;align-items:center;gap:8px;min-width:0}
-.brand svg{width:40px;height:40px;flex:none}
-.brand h1{margin:0;font-size:34px;line-height:1;font-weight:800;letter-spacing:-.5px}
-.brand p{margin:2px 0 0;font-size:14px;line-height:1.1;color:var(--muted);font-weight:600}
-.clock{
-  display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;
-  background:var(--surface);box-shadow:inset 0 0 0 1px var(--edge);
-  font-weight:700;font-size:18px;font-variant-numeric:tabular-nums;
+:focus-visible{outline:3px solid var(--nose);outline-offset:3px}
+.shell{
+  max-width:880px;margin:0 auto;
+  padding:max(28px, env(safe-area-inset-top)) 18px max(32px, env(safe-area-inset-bottom));
 }
-.clock svg{width:18px;height:18px}
-
-/* Reglas */
-.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:6px;border-radius:18px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--edge)}
-.rule{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;padding:8px 6px;border-radius:12px;background:var(--chip);font-weight:700;font-size:clamp(12.5px,3.5vw,15px);line-height:1.12}
-.rule small{font-weight:600;font-size:.82em;color:var(--muted)}
-
-/* Estado */
-.status{display:flex;justify-content:center;gap:10px}
-.pill{display:flex;align-items:center;gap:8px;padding:6px 16px;border-radius:999px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--edge)}
-.pill .mini{width:32px;height:32px}
-.count{font-size:28px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;color:var(--muted)}
-.count b{color:var(--good)}
-.hearts{display:flex;gap:4px}
-.hearts svg{width:30px;height:30px;transition:transform .25s}
-.hearts .h{fill:var(--heart)}
-.hearts .h.off{fill:var(--heart-off)}
-.hearts .h.lost{animation:heartbreak .5s ease}
-@keyframes heartbreak{30%{transform:scale(1.35) rotate(-10deg)}60%{transform:scale(.8) rotate(8deg)}}
-
-/* Tablero */
-.board-wrap{position:relative;background:var(--board);border-radius:22px;padding:10px;box-shadow:var(--lift)}
-#board{
-  --n:8;display:grid;grid-template-columns:repeat(var(--n),1fr);
-  gap:calc(14px - var(--n) * 1px);
-  touch-action:none;user-select:none;-webkit-user-select:none;
+header{margin-bottom:22px}
+.mark{
+  width:64px;height:64px;display:grid;place-items:center;margin-bottom:10px;
+  border-radius:22px;background:var(--surface);box-shadow:var(--lift);
+  font-size:34px;line-height:1;
 }
-.cell{
-  position:relative;aspect-ratio:1;border-radius:22%;background:var(--c);cursor:pointer;
-  box-shadow:inset 0 -3px 0 rgba(0,0,0,.09);transition:transform .08s ease, filter .2s;
+h1{margin:0;font-size:clamp(40px, 8vw, 56px);line-height:.95;font-weight:800;letter-spacing:-.6px}
+.lead{margin:8px 0 0;max-width:36ch;color:var(--muted);font-weight:600;font-size:18px;line-height:1.25}
+.count{margin:14px 0 0;font-weight:700;font-size:14px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(min(100%, 320px), 1fr));gap:14px}
+.card{
+  display:flex;align-items:center;gap:14px;min-height:108px;
+  padding:16px;border-radius:24px;text-decoration:none;color:inherit;
+  background:var(--surface);box-shadow:var(--lift), inset 0 0 0 1px var(--edge);
+  transition:transform .12s ease;
 }
-.cell:active{transform:scale(.93)}
-.cell .x,.cell .cat{position:absolute;pointer-events:none;opacity:0}
-.cell .x{inset:20%;filter:drop-shadow(0 1px 1px rgba(0,0,0,.18));transition:opacity .15s}
-.cell .cat{inset:5%;transform:scale(.4)}
-.cell.has-x .x{opacity:1}
-.cell.auto .x{opacity:.5}
-.cell.has-cat .cat{opacity:1;transform:none}
-.cell.pop .cat{animation:pop .38s cubic-bezier(.3,1.6,.5,1)}
-@keyframes pop{0%{transform:scale(.3);opacity:0}100%{transform:none;opacity:1}}
-.cell.shake{animation:shake .4s}
-.cell.shake::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 3px var(--heart);animation:fade .9s forwards}
-@keyframes shake{20%{transform:translateX(-12%)}40%{transform:translateX(10%)}60%{transform:translateX(-7%)}80%{transform:translateX(4%)}}
-@keyframes fade{0%,50%{opacity:1}100%{opacity:0}}
-.cell.nudge{animation:nudge .25s}
-@keyframes nudge{50%{transform:scale(.9)}}
-.cell.glow::before{content:"";position:absolute;inset:-3px;border-radius:24%;box-shadow:0 0 0 3px var(--nose);animation:fade 1.4s forwards}
-.cell.dance .cat{animation:dance .6s ease both}
-@keyframes dance{0%{transform:none}35%{transform:translateY(-18%) rotate(-8deg)}70%{transform:translateY(0) rotate(5deg)}100%{transform:none}}
-.board-wrap.solved #board .cell:not(.has-cat){filter:saturate(.55) brightness(1.04)}
-
-.busy{position:absolute;inset:0;display:none;align-items:center;justify-content:center;border-radius:22px;background:color-mix(in srgb,var(--board) 80%,transparent);font-weight:700;font-size:18px}
-.busy.on{display:flex}
-
-/* Herramientas */
-.tools{display:flex;gap:8px;align-items:stretch}
-.seg{display:flex;flex:1;padding:4px;border-radius:16px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--edge)}
-.seg button{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:0;background:none;padding:8px 6px;border-radius:12px;font-weight:700;font-size:16px;cursor:pointer}
-.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
-.seg svg{width:22px;height:22px}
-.icon-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;min-width:62px;border:0;border-radius:16px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--edge);font-weight:700;font-size:13px;line-height:1.1;cursor:pointer;padding:6px 8px}
-.icon-btn svg{width:22px;height:22px}
-.icon-btn:active,.seg button:active,.big:active{transform:scale(.96)}
-
-/* Niveles */
-.levelbar{display:flex;gap:8px;align-items:stretch}
-.sizes{gap:2px}
-.sizes .lv{padding:8px 2px;font-size:14.5px;white-space:nowrap}
-.sizes .lv[data-key="ad"]{flex:1.6}
-.sizes .lv[aria-pressed="true"]{background:var(--nose);color:#fff}
-
-.foot{display:flex;flex-direction:column;gap:8px;color:var(--muted);font-size:14px;line-height:1.3;font-weight:600}
-.langrow{display:flex;align-items:center;gap:10px;color:var(--ink)}
-.langs{flex:none;gap:2px}
-.langs button{flex:none;padding:6px 12px;font-size:15px}
-.switch{display:flex;align-items:center;gap:10px;cursor:pointer;color:var(--ink)}
-.switch input{appearance:none;-webkit-appearance:none;width:42px;height:26px;border-radius:999px;background:var(--heart-off);position:relative;flex:none;cursor:pointer;transition:background .2s;margin:0}
-.switch input::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
-.switch input:checked{background:var(--good)}
-.switch input:checked::after{transform:translateX(16px)}
-
-/* Ventanas */
-.modal{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;padding:20px;background:var(--scrim)}
-.modal.on{display:flex}
-.card{width:100%;max-width:360px;background:var(--surface);border-radius:26px;padding:22px 20px 18px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.25);animation:rise .3s cubic-bezier(.2,1.3,.5,1)}
-@keyframes rise{from{transform:translateY(20px) scale(.96);opacity:0}}
-.card .face{width:84px;height:84px;margin:-4px auto 4px}
-.card h2{margin:0;font-size:28px;line-height:1.1;font-weight:800}
-.card p{margin:6px 0 0;color:var(--muted);font-weight:600;font-size:16px;line-height:1.3}
-.stats{display:flex;justify-content:center;gap:8px;margin:14px 0 4px}
-.stat{flex:1;background:var(--chip);border-radius:14px;padding:8px 4px}
-.stat b{display:block;font-size:22px;line-height:1.1;font-variant-numeric:tabular-nums}
-.stat span{font-size:13px;color:var(--muted);font-weight:600}
-.record{margin-top:8px;font-weight:700;color:var(--good)}
-.actions{display:flex;flex-direction:column;gap:8px;margin-top:16px}
-.big{border:0;border-radius:16px;padding:12px;font-weight:800;font-size:17px;cursor:pointer;background:var(--chip)}
-.big.primary{background:var(--nose);color:#fff}
-
-@media (max-height:700px){
-  .app{gap:9px;padding-top:10px}
-  .brand h1{font-size:28px}
-  .rule{padding:6px 4px}
+.card:hover{transform:translateY(-2px)}
+.card:active{transform:scale(.985)}
+.icon{
+  flex:none;width:64px;height:64px;display:grid;place-items:center;
+  border-radius:20px;background:var(--chip);font-size:34px;line-height:1;
 }
+.body{min-width:0;flex:1}
+.card h2{margin:0;font-size:24px;line-height:1.05;font-weight:800}
+.card p{margin:4px 0 0;color:var(--muted);font-weight:600;font-size:15px;line-height:1.25}
+.play{
+  flex:none;padding:8px 12px;border-radius:999px;background:var(--play);color:var(--paper);
+  font-weight:800;font-size:14px;line-height:1;
+}
+@media (max-width: 380px){
+  .play{display:none}
+}
+.empty{
+  margin:8px 0 0;padding:22px;border-radius:24px;background:var(--surface);
+  box-shadow:inset 0 0 0 1px var(--edge);color:var(--muted);font-weight:700;text-align:center;
+}
+footer{margin-top:28px;color:var(--muted);font-size:14px;font-weight:600;line-height:1.35}
+footer code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
 @media (prefers-reduced-motion: reduce){
-  *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important}
+  .card{transition:none}
 }
 </style>
 </head>
 <body>
-<main class="app">
-  <header class="top">
-    <div class="brand">
-      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#cat"/></svg>
-      <div>
-        <h1 data-i18n="title">Michis</h1>
-        <p data-i18n="tagline">Pon un gato en cada color</p>
-      </div>
-    </div>
-    <div class="clock" data-i18n-aria="time" aria-label="Tiempo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M10 2h4"/></svg>
-      <span id="timer">0:00</span>
-    </div>
+<main class="shell">
+  <header>
+    <div class="mark" aria-hidden="true">🎲</div>
+    <h1>Juegos</h1>
+    <p class="lead">Elige uno y empieza a jugar. Cada juego vive en su propia carpeta.</p>
+    <p class="count" id="count"></p>
   </header>
-
-  <section class="rules" data-i18n-aria="rules" aria-label="Reglas">
-    <div class="rule" data-i18n="rule1">1 gato por color</div>
-    <div class="rule" data-i18n="rule2">1 gato por fila y columna</div>
-    <div class="rule"><span data-i18n="rule3">Los gatos no se tocan</span><small data-i18n="rule3s">ni en diagonal</small></div>
-  </section>
-
-  <div class="status">
-    <div class="pill" aria-live="polite">
-      <svg class="mini" viewBox="0 0 100 100" aria-hidden="true"><use href="#cat"/></svg>
-      <span class="count"><b id="count">0</b>/<span id="total">8</span></span>
-    </div>
-    <div class="pill"><div class="hearts" id="hearts"></div></div>
-  </div>
-
-  <div class="board-wrap" id="wrap">
-    <div id="board" role="grid" data-i18n-aria="board" aria-label="Tablero"></div>
-    <div class="busy" id="busy" data-i18n="busy">Creando tablero…</div>
-  </div>
-
-  <div class="tools">
-    <div class="seg" role="group" data-i18n-aria="tool" aria-label="Herramienta">
-      <button id="toolCat" aria-pressed="true"><svg viewBox="0 0 100 100"><use href="#cat"/></svg><span data-i18n="cat">Gato</span></button>
-      <button id="toolX" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg><span data-i18n="mark">Marcar</span></button>
-    </div>
-    <button class="icon-btn" id="hintBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg><span data-i18n="hint">Pista</span></button>
-    <button class="icon-btn" id="resetBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v5h5"/></svg><span data-i18n="reset">Reiniciar</span></button>
-  </div>
-
-  <div class="levelbar">
-    <div class="seg sizes" id="levels" role="group" data-i18n-aria="board" aria-label="Tablero">
-      <button class="lv" data-key="ad" aria-pressed="false" data-i18n="ad">Anuncio</button>
-      <button class="lv" data-key="5" aria-pressed="false">5×5</button>
-      <button class="lv" data-key="6" aria-pressed="false">6×6</button>
-      <button class="lv" data-key="7" aria-pressed="false">7×7</button>
-      <button class="lv" data-key="8" aria-pressed="false">8×8</button>
-      <button class="lv" data-key="9" aria-pressed="false">9×9</button>
-    </div>
-    <button class="icon-btn" id="newBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/></svg><span data-i18n="new">Nuevo</span></button>
-  </div>
-
-  <div class="foot">
-    <span data-i18n="help">Toca una casilla para poner un gato. Si te equivocas, pierdes una vida. Mantén pulsado (o usa Marcar y arrastra) para tachar casillas.</span>
-    <label class="switch"><input type="checkbox" id="autoMark"><span data-i18n="auto">Tachar fila, columna y color al poner un gato</span></label>
-    <div class="langrow">
-      <span id="langLabel" data-i18n="lang">Idioma</span>
-      <div class="seg langs" role="group" aria-labelledby="langLabel">
-        <button data-lang="es" lang="es" aria-pressed="true">Español</button>
-        <button data-lang="en" lang="en" aria-pressed="false">English</button>
-        <button data-lang="fr" lang="fr" aria-pressed="false">Français</button>
-      </div>
-    </div>
-  </div>
+  <div class="grid" id="games"></div>
+  <p class="empty" id="empty" hidden>Todavía no hay juegos en el menú.</p>
+  <footer>Para añadir un juego, crea su carpeta y registra una entrada en la lista <code>GAMES</code> de esta página.</footer>
 </main>
-
-<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
-  <div class="card">
-    <svg class="face" viewBox="0 0 100 100" aria-hidden="true"><use href="#cat"/></svg>
-    <h2 id="mTitle"></h2>
-    <p id="mText"></p>
-    <div class="stats" id="mStats"></div>
-    <div class="record" id="mRecord"></div>
-    <div class="actions" id="mActions"></div>
-  </div>
-</div>
-
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <defs>
-    <symbol id="cat" viewBox="0 0 100 100">
-      <ellipse cx="50" cy="94" rx="30" ry="4" fill="rgba(0,0,0,.13)"/>
-      <path d="M13 50 Q9 16 21 7 Q35 13 45 27 Z" fill="#26243a"/>
-      <path d="M87 50 Q91 16 79 7 Q65 13 55 27 Z" fill="#26243a"/>
-      <path d="M20 36 Q19 20 24 15 Q32 19 37 27 Z" fill="#f7a8bb"/>
-      <path d="M80 36 Q81 20 76 15 Q68 19 63 27 Z" fill="#f7a8bb"/>
-      <ellipse cx="50" cy="58" rx="41" ry="34" fill="#26243a"/>
-      <path d="M50 33 C45 43 40 49 31 55 C19 63 18 79 31 86 C41 92 59 92 69 86 C82 79 81 63 69 55 C60 49 55 43 50 33 Z" fill="#fff"/>
-      <ellipse cx="34" cy="57" rx="10" ry="11" fill="#fff" stroke="#26243a" stroke-width="2.4"/>
-      <ellipse cx="66" cy="57" rx="10" ry="11" fill="#fff" stroke="#26243a" stroke-width="2.4"/>
-      <circle cx="36.5" cy="59" r="5.6" fill="#1b1a2a"/>
-      <circle cx="63.5" cy="59" r="5.6" fill="#1b1a2a"/>
-      <circle cx="38.5" cy="56.5" r="1.9" fill="#fff"/>
-      <circle cx="65.5" cy="56.5" r="1.9" fill="#fff"/>
-      <path d="M45.5 69 Q50 66 54.5 69 Q50 74 45.5 69 Z" fill="#ff6f91"/>
-      <path d="M43.5 75 Q47 79 50 75.5 Q53 79 56.5 75" fill="none" stroke="#26243a" stroke-width="2.2" stroke-linecap="round"/>
-    </symbol>
-    <symbol id="xmark" viewBox="0 0 100 100">
-      <path d="M22 22L78 78M78 22L22 78" stroke="#fff" stroke-width="17" stroke-linecap="round" fill="none"/>
-    </symbol>
-    <symbol id="heart" viewBox="0 0 24 24">
-      <path d="M12 21.2l-1.4-1.3C5.4 15.3 2 12.2 2 8.4 2 5.3 4.4 3 7.5 3c1.7 0 3.4.8 4.5 2.1C13.1 3.8 14.8 3 16.5 3 19.6 3 22 5.3 22 8.4c0 3.8-3.4 6.9-8.6 11.5L12 21.2z"/>
-    </symbol>
-  </defs>
-</svg>
-
 <script>
-(() => {
-  "use strict";
-  const PALETTE = ["#4cc7b4","#a7c0e0","#bf5b86","#9479d6","#a9e79a","#5db3e6","#e0b53e","#e59cc0","#f2956e"];
-  const AD = {
-    rows: ["TTLMMPGG","TLLMMGGG","TMMMMGGG","BBBMGGGG","BBBBBBYG","BBBKKKYY","BKKKKKYY","KKKKKKKY"],
-    colors: { T:"#4cc7b4", L:"#a7c0e0", M:"#bf5b86", P:"#9479d6", G:"#a9e79a", B:"#5db3e6", Y:"#e0b53e", K:"#e59cc0" }
-  };
-  const LIVES = 3;
+/*
+  Cómo añadir un juego
+  --------------------
+  1. Crea una carpeta en la raíz del repositorio (nombre en kebab-case)
+     con un index.html. Ejemplo: memoria/index.html
+  2. Añade un objeto a GAMES, aquí abajo:
+       { title, description, folder, emoji }
+     - title:        nombre que se ve en la tarjeta
+     - description:  una frase corta
+     - folder:       nombre de la carpeta (sin barras)
+     - emoji:        un emoji que sirva de icono
+  3. La tarjeta enlaza a ./<folder>/  (en GitHub Pages, la URL del sitio + esa carpeta).
+     Dentro del juego, un enlace a "../" vuelve a este menú.
+*/
+const GAMES = [
+  {
+    title: "Michis",
+    description: "Pon un gato en cada color: uno por fila y columna, sin que se toquen.",
+    folder: "michis",
+    emoji: "🐱"
+  }
+];
 
-  const store = {
-    get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
-    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
-  };
+const list = document.getElementById("games");
+const empty = document.getElementById("empty");
+const count = document.getElementById("count");
 
-  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
-  const nb4 = (i, n) => { const r = Math.floor(i / n), c = i % n, o = []; if (r > 0) o.push(i - n); if (r < n - 1) o.push(i + n); if (c > 0) o.push(i - 1); if (c < n - 1) o.push(i + 1); return o; };
+const folderOk = name => typeof name === "string" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name);
 
-  function randomPlacement(n) {
-    const p = new Array(n), used = new Array(n).fill(false);
-    (function bt(r) {
-      if (r === n) return true;
-      for (const c of shuffle([...Array(n).keys()])) {
-        if (used[c] || (r > 0 && Math.abs(c - p[r - 1]) <= 1)) continue;
-        used[c] = true; p[r] = c;
-        if (bt(r + 1)) return true;
-        used[c] = false;
-      }
-      return false;
-    })(0);
-    return p;
-  }
-  function growRegions(n, p) {
-    const reg = new Array(n * n).fill(-1);
-    for (let r = 0; r < n; r++) reg[r * n + p[r]] = r;
-    let left = n * n - n;
-    while (left > 0) {
-      const front = [];
-      for (let i = 0; i < n * n; i++) {
-        if (reg[i] !== -1) continue;
-        const rs = nb4(i, n).map(j => reg[j]).filter(k => k !== -1);
-        if (rs.length) front.push([i, rs]);
-      }
-      const [i, rs] = front[Math.floor(Math.random() * front.length)];
-      reg[i] = rs[Math.floor(Math.random() * rs.length)];
-      left--;
-    }
-    return reg;
-  }
-  function solve(reg, n, limit) {
-    const sols = [], p = new Array(n); let cm = 0, rm = 0;
-    (function bt(r) {
-      if (sols.length >= limit) return;
-      if (r === n) { sols.push(p.slice()); return; }
-      for (let c = 0; c < n; c++) {
-        if ((cm >> c) & 1) continue;
-        if (r > 0 && Math.abs(c - p[r - 1]) <= 1) continue;
-        const k = reg[r * n + c];
-        if ((rm >> k) & 1) continue;
-        p[r] = c; cm |= 1 << c; rm |= 1 << k;
-        bt(r + 1);
-        cm &= ~(1 << c); rm &= ~(1 << k);
-      }
-    })(0);
-    return sols;
-  }
-  function connectedWithout(reg, n, p, k, skip) {
-    const start = k * n + p[k]; let total = 0;
-    for (let i = 0; i < n * n; i++) if (reg[i] === k && i !== skip) total++;
-    const seen = new Set([start]), st = [start];
-    while (st.length) { const i = st.pop(); for (const j of nb4(i, n)) if (j !== skip && reg[j] === k && !seen.has(j)) { seen.add(j); st.push(j); } }
-    return seen.size === total;
-  }
-  function refine(n, p, reg) {
-    for (let it = 0; it < 500; it++) {
-      const sols = solve(reg, n, 2);
-      if (sols.length === 1) return true;
-      const alt = sols.find(s => s.some((c, r) => c !== p[r]));
-      const cand = shuffle(alt.map((c, r) => c !== p[r] ? r * n + c : -1).filter(x => x >= 0));
-      let moved = false;
-      for (const idx of cand) {
-        const k = reg[idx];
-        const opts = shuffle([...new Set(nb4(idx, n).map(j => reg[j]).filter(j => j !== k))]);
-        if (!opts.length || !connectedWithout(reg, n, p, k, idx)) continue;
-        reg[idx] = opts[0]; moved = true; break;
-      }
-      if (!moved) return false;
-    }
-    return false;
-  }
-  function generate(n) {
-    for (let a = 0; a < 800; a++) {
-      const p = randomPlacement(n), reg = growRegions(n, p);
-      if (refine(n, p, reg)) return { n, reg, sol: p, colors: shuffle(PALETTE.slice()).slice(0, n) };
-    }
-    return null;
-  }
-  function adPuzzle() {
-    const flat = AD.rows.join("");
-    const letters = [...new Set(flat)];
-    const reg = flat.split("").map(ch => letters.indexOf(ch));
-    return { n: 8, reg, sol: solve(reg, 8, 1)[0], colors: letters.map(l => AD.colors[l]) };
-  }
+GAMES.forEach(game => {
+  if (!folderOk(game.folder)) return;
+  const a = document.createElement("a");
+  a.className = "card";
+  a.href = "./" + game.folder + "/";
 
-  const NB = "\u202F";
-  const I18N = {
-    es: {
-      doc: "Michis: un gato por color", title: "Michis", tagline: "Pon un gato en cada color",
-      rule1: "1 gato por color", rule2: "1 gato por fila y columna", rule3: "Los gatos no se tocan", rule3s: "ni en diagonal",
-      busy: "Creando tablero…", cat: "Gato", mark: "Marcar", hint: "Pista", reset: "Reiniciar", new: "Nuevo", ad: "Anuncio",
-      help: "Toca una casilla para poner un gato. Si te equivocas, pierdes una vida. Mantén pulsado (o usa Marcar y arrastra) para tachar casillas.",
-      auto: "Tachar fila, columna y color al poner un gato", lang: "Idioma",
-      time: "Tiempo", rules: "Reglas", tool: "Herramienta", board: "Tablero",
-      lives: (l, t) => `${l} de ${t} vidas`, cell: (r, c) => `Fila ${r}, columna ${c}`, cellCat: ", gato", cellX: ", tachada",
-      winTitle: "¡Miau! Lo resolviste", perfect: "Sin un solo error.", solved: "Todos los gatos están en su sitio.",
-      sTime: "tiempo", sErr: n => n === 1 ? "error" : "errores", sHint: n => n === 1 ? "pista" : "pistas",
-      firstRecord: "Primer récord en este tablero", newRecord: "¡Nuevo récord!", best: t => `Récord: ${t}`,
-      another: "Otro tablero", viewBoard: "Ver el tablero",
-      loseTitle: "Te quedaste sin vidas", placed: (a, n) => `Colocaste ${a} de ${n} gatos.`,
-      retry: "Intentar de nuevo", showSol: "Ver la solución", newBoard: "Tablero nuevo"
-    },
-    en: {
-      doc: "Kitties: one cat per color", title: "Kitties", tagline: "Put one cat in each color",
-      rule1: "1 cat per color", rule2: "1 cat per row and column", rule3: "Cats can’t touch", rule3s: "not even diagonally",
-      busy: "Building the board…", cat: "Cat", mark: "Mark", hint: "Hint", reset: "Restart", new: "New", ad: "The ad",
-      help: "Tap a square to place a cat. If it’s wrong, you lose a life. Press and hold (or use Mark and drag) to cross out squares.",
-      auto: "Cross out the row, column and color when you place a cat", lang: "Language",
-      time: "Time", rules: "Rules", tool: "Tool", board: "Board",
-      lives: (l, t) => `${l} of ${t} lives`, cell: (r, c) => `Row ${r}, column ${c}`, cellCat: ", cat", cellX: ", crossed out",
-      winTitle: "Meow! You solved it", perfect: "Not a single mistake.", solved: "Every cat is in its place.",
-      sTime: "time", sErr: n => n === 1 ? "mistake" : "mistakes", sHint: n => n === 1 ? "hint" : "hints",
-      firstRecord: "First record on this board", newRecord: "New record!", best: t => `Best: ${t}`,
-      another: "Another board", viewBoard: "View the board",
-      loseTitle: "You’re out of lives", placed: (a, n) => `You placed ${a} of ${n} cats.`,
-      retry: "Try again", showSol: "Show the solution", newBoard: "New board"
-    },
-    fr: {
-      doc: `Minous${NB}: un chat par couleur`, title: "Minous", tagline: "Un chat dans chaque couleur",
-      rule1: "1 chat par couleur", rule2: "1 chat par ligne et colonne", rule3: "Les chats ne se touchent pas", rule3s: "même en diagonale",
-      busy: "Création de la grille…", cat: "Chat", mark: "Barrer", hint: "Indice", reset: "Rejouer", new: "Nouveau", ad: "La pub",
-      help: "Touche une case pour placer un chat. Si tu te trompes, tu perds une vie. Maintiens appuyé (ou utilise Barrer et fais glisser) pour barrer des cases.",
-      auto: "Barrer la ligne, la colonne et la couleur quand tu places un chat", lang: "Langue",
-      time: "Temps", rules: "Règles", tool: "Outil", board: "Grille",
-      lives: (l, t) => `${l} ${l > 1 ? "vies" : "vie"} sur ${t}`, cell: (r, c) => `Ligne ${r}, colonne ${c}`, cellCat: ", chat", cellX: ", barrée",
-      winTitle: `Miaou${NB}! Tu as réussi`, perfect: "Sans une seule erreur.", solved: "Tous les chats sont à leur place.",
-      sTime: "temps", sErr: n => n > 1 ? "erreurs" : "erreur", sHint: n => n > 1 ? "indices" : "indice",
-      firstRecord: "Premier record sur cette grille", newRecord: `Nouveau record${NB}!`, best: t => `Record${NB}: ${t}`,
-      another: "Une autre grille", viewBoard: "Voir la grille",
-      loseTitle: "Tu n’as plus de vies", placed: (a, n) => `Tu as placé ${a} ${a > 1 ? "chats" : "chat"} sur ${n}.`,
-      retry: "Réessayer", showSol: "Voir la solution", newBoard: "Nouvelle grille"
-    }
-  };
-  const pickLang = () => {
-    const saved = store.get("michis:idioma", null);
-    if (I18N[saved]) return saved;
-    for (const l of navigator.languages || [navigator.language || ""]) {
-      const b = String(l).slice(0, 2).toLowerCase();
-      if (I18N[b]) return b;
-    }
-    return "es";
-  };
-  let lang = pickLang();
-  const T = k => I18N[lang][k];
-  let modalBuilder = null;
-  function applyLang() {
-    document.documentElement.lang = lang;
-    document.title = T("doc");
-    document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = T(el.dataset.i18n); });
-    document.querySelectorAll("[data-i18n-aria]").forEach(el => el.setAttribute("aria-label", T(el.dataset.i18nAria)));
-    document.querySelectorAll("[data-lang]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
-    if (G) { cells.forEach((_, i) => paint(i)); renderStatus(); }
-    if (modalBuilder && $("modal").classList.contains("on")) openModal(modalBuilder());
-  }
+  const icon = document.createElement("span");
+  icon.className = "icon";
+  icon.setAttribute("aria-hidden", "true");
+  icon.textContent = game.emoji || "🎮";
 
-  const $ = id => document.getElementById(id);
-  const boardEl = $("board"), wrapEl = $("wrap");
-  let G = null, cells = [], tool = "cat";
-  let fullAuto = !store.get("michis:soloVecinos", false);
+  const body = document.createElement("span");
+  body.className = "body";
+  const h2 = document.createElement("h2");
+  h2.textContent = game.title || game.folder;
+  const p = document.createElement("p");
+  p.textContent = game.description || "";
+  body.append(h2, p);
 
-  function freshGame(key, puzzle) {
-    return { key, ...puzzle, cats: new Set(), marks: {}, lives: LIVES, mistakes: 0, hints: 0, elapsed: 0, started: false, done: false, result: null };
-  }
-  function save() {
-    if (!G) return;
-    store.set("michis:partida", { ...G, cats: [...G.cats] });
-  }
-  function load() {
-    const s = store.get("michis:partida", null);
-    if (!s || !Array.isArray(s.reg) || !Array.isArray(s.sol) || s.reg.length !== s.n * s.n) return null;
-    s.cats = new Set(s.cats || []);
-    s.marks = s.marks || {};
-    return s;
-  }
+  const play = document.createElement("span");
+  play.className = "play";
+  play.textContent = "Jugar";
 
-  function buildBoard() {
-    boardEl.innerHTML = "";
-    boardEl.style.setProperty("--n", G.n);
-    cells = [];
-    for (let i = 0; i < G.n * G.n; i++) {
-      const d = document.createElement("div");
-      d.className = "cell";
-      d.dataset.i = i;
-      d.style.setProperty("--c", G.colors[G.reg[i]]);
-      d.setAttribute("role", "gridcell");
-      d.innerHTML = '<svg class="x" viewBox="0 0 100 100"><use href="#xmark"/></svg><svg class="cat" viewBox="0 0 100 100"><use href="#cat"/></svg>';
-      boardEl.appendChild(d);
-      cells.push(d);
-    }
-    cells.forEach((_, i) => paint(i));
-  }
-  function paint(i) {
-    const d = cells[i], m = G.marks[i], cat = G.cats.has(i);
-    d.classList.toggle("has-cat", cat);
-    d.classList.toggle("has-x", !!m && !cat);
-    d.classList.toggle("auto", m === "auto" || m === "err");
-    const r = Math.floor(i / G.n) + 1, c = (i % G.n) + 1;
-    d.setAttribute("aria-label", T("cell")(r, c) + (cat ? T("cellCat") : m ? T("cellX") : ""));
-  }
-  function renderStatus() {
-    $("count").textContent = G.cats.size;
-    $("total").textContent = G.n;
-    const h = $("hearts");
-    if (h.children.length !== LIVES) {
-      h.innerHTML = "";
-      for (let k = 0; k < LIVES; k++) h.insertAdjacentHTML("beforeend", '<svg class="h" viewBox="0 0 24 24"><use href="#heart"/></svg>');
-    }
-    [...h.children].forEach((el, k) => el.classList.toggle("off", k >= G.lives));
-    h.setAttribute("aria-label", T("lives")(G.lives, LIVES));
-    wrapEl.classList.toggle("solved", G.done);
-    document.querySelectorAll(".lv[data-key]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.key === G.key)));
-    $("hintBtn").disabled = G.done;
-    renderTimer();
-  }
-  const fmt = ms => { const s = Math.floor(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
-  function renderTimer() { $("timer").textContent = fmt(G ? G.elapsed : 0); }
-  function flash(i, cls, ms) {
-    const d = cells[i]; d.classList.remove(cls); void d.offsetWidth; d.classList.add(cls);
-    setTimeout(() => d.classList.remove(cls), ms);
-  }
-  const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
+  a.setAttribute("aria-label", "Jugar a " + (game.title || game.folder));
+  a.append(icon, body, play);
+  list.append(a);
+});
 
-  let last = performance.now(), sinceSave = 0;
-  setInterval(() => {
-    const now = performance.now(), dt = now - last; last = now;
-    if (G && G.started && !G.done && !document.hidden) {
-      G.elapsed += dt; renderTimer();
-      sinceSave += dt; if (sinceSave > 4000) { sinceSave = 0; save(); }
-    }
-  }, 250);
-  document.addEventListener("visibilitychange", () => { last = performance.now(); if (document.hidden) save(); });
-
-  function blockedBy(i) {
-    const n = G.n, r = Math.floor(i / n), c = i % n, k = G.reg[i], out = [];
-    for (let j = 0; j < n * n; j++) {
-      if (j === i) continue;
-      const rj = Math.floor(j / n), cj = j % n;
-      const touch = Math.abs(rj - r) <= 1 && Math.abs(cj - c) <= 1;
-      if (touch || (fullAuto && (rj === r || cj === c || G.reg[j] === k))) out.push(j);
-    }
-    return out;
-  }
-  function placeCat(i, how) {
-    G.cats.add(i);
-    delete G.marks[i];
-    paint(i);
-    flash(i, "pop", 400);
-    if (how === "hint") flash(i, "glow", 1400);
-    for (const j of blockedBy(i)) {
-      if (G.cats.has(j) || G.marks[j] === "err") continue;
-      G.marks[j] = "auto"; paint(j);
-    }
-    renderStatus();
-    if (G.cats.size === G.n && how !== "reveal") win();
-  }
-  function start() { if (!G.started) { G.started = true; last = performance.now(); } }
-
-  function tapCat(i) {
-    if (G.done) return;
-    if (G.cats.has(i) || G.marks[i] === "auto" || G.marks[i] === "err") { flash(i, "nudge", 260); return; }
-    start();
-    const r = Math.floor(i / G.n), c = i % G.n;
-    if (G.sol[r] === c) {
-      buzz(12);
-      placeCat(i, "tap");
-    } else {
-      G.lives--; G.mistakes++;
-      G.marks[i] = "err"; paint(i);
-      flash(i, "shake", 900);
-      buzz([60, 40, 60]);
-      renderStatus();
-      const lost = $("hearts").children[G.lives];
-      if (lost) { lost.classList.remove("lost"); void lost.offsetWidth; lost.classList.add("lost"); }
-      if (G.lives <= 0) lose();
-    }
-    save();
-  }
-  function setX(i, on) {
-    if (G.done || G.cats.has(i) || G.marks[i] === "auto" || G.marks[i] === "err") return false;
-    if (on && !G.marks[i]) G.marks[i] = "x";
-    else if (!on && G.marks[i] === "x") delete G.marks[i];
-    else return false;
-    start(); paint(i); return true;
-  }
-  function hint() {
-    if (G.done) return;
-    start();
-    const n = G.n, have = new Set([...G.cats].map(i => G.reg[i]));
-    let best = null, bestCount = Infinity;
-    for (let k = 0; k < n; k++) {
-      if (have.has(k)) continue;
-      let cnt = 0;
-      for (let i = 0; i < n * n; i++) if (G.reg[i] === k && !G.marks[i]) cnt++;
-      if (cnt < bestCount || (cnt === bestCount && Math.random() < .5)) { bestCount = cnt; best = k; }
-    }
-    if (best == null) return;
-    for (let r = 0; r < n; r++) {
-      const i = r * n + G.sol[r];
-      if (G.reg[i] === best) { G.hints++; placeCat(i, "hint"); break; }
-    }
-    save();
-  }
-  function reveal() {
-    for (let r = 0; r < G.n; r++) { const i = r * G.n + G.sol[r]; if (!G.cats.has(i)) placeCat(i, "reveal"); }
-    G.done = true; G.result = "reveal"; renderStatus(); save();
-  }
-
-  function win() {
-    G.done = true; G.result = "win";
-    const bests = store.get("michis:records", {});
-    const prev = bests[G.key];
-    const isRecord = G.hints === 0 && (prev == null || G.elapsed < prev);
-    if (isRecord) { bests[G.key] = G.elapsed; store.set("michis:records", bests); }
-    renderStatus(); save();
-    const order = [...G.cats].sort((a, b) => a - b);
-    order.forEach((i, k) => setTimeout(() => flash(i, "dance", 650), 80 * k));
-    const elapsed = G.elapsed, mistakes = G.mistakes, hints = G.hints, key = G.key;
-    const build = () => {
-      const recordText = isRecord ? (prev == null ? T("firstRecord") : T("newRecord"))
-        : (bests[key] != null ? T("best")(fmt(bests[key])) : "");
-      return {
-        title: T("winTitle"),
-        text: mistakes === 0 && hints === 0 ? T("perfect") : T("solved"),
-        stats: [[fmt(elapsed), T("sTime")], [mistakes, T("sErr")(mistakes)], [hints, T("sHint")(hints)]],
-        record: recordText,
-        actions: [[T("another"), "primary", () => newGame(key === "ad" ? "8" : key)], [T("viewBoard"), "", null]]
-      };
-    };
-    setTimeout(() => {
-      modalBuilder = build; openModal(build());
-    }, 80 * order.length + 450);
-  }
-  function lose() {
-    G.done = true; G.result = "lose"; renderStatus(); save();
-    const placed = G.cats.size, n = G.n, key = G.key;
-    const build = () => ({
-      title: T("loseTitle"),
-      text: T("placed")(placed, n),
-      actions: [[T("retry"), "primary", () => restart()], [T("showSol"), "", () => reveal()], [T("newBoard"), "", () => newGame(key === "ad" ? "8" : key)]]
-    });
-    setTimeout(() => { modalBuilder = build; openModal(build()); }, 650);
-  }
-  function openModal({ title, text, stats = [], record = "", actions }) {
-    $("mTitle").textContent = title;
-    $("mText").textContent = text;
-    $("mStats").innerHTML = stats.map(([v, l]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`).join("");
-    $("mStats").style.display = stats.length ? "" : "none";
-    $("mRecord").textContent = record;
-    const box = $("mActions"); box.innerHTML = "";
-    actions.forEach(([label, cls, fn]) => {
-      const b = document.createElement("button");
-      b.className = "big " + cls; b.textContent = label;
-      b.onclick = () => { closeModal(); if (fn) fn(); };
-      box.appendChild(b);
-    });
-    $("modal").classList.add("on");
-  }
-  function closeModal() { $("modal").classList.remove("on"); modalBuilder = null; }
-  $("modal").addEventListener("click", e => { if (e.target.id === "modal") closeModal(); });
-  document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
-
-  function newGame(key) {
-    closeModal();
-    if (key === "ad") { G = freshGame("ad", adPuzzle()); buildBoard(); renderStatus(); save(); return; }
-    const n = +key;
-    $("busy").classList.add("on");
-    setTimeout(() => {
-      const p = generate(n);
-      $("busy").classList.remove("on");
-      if (!p) { newGame(key); return; }
-      G = freshGame(key, p); buildBoard(); renderStatus(); save();
-    }, 30);
-  }
-  function restart() {
-    const { key, n, reg, sol, colors } = G;
-    G = freshGame(key, { n, reg, sol, colors });
-    buildBoard(); renderStatus(); save();
-  }
-
-  let press = null, painting = null;
-  const cellAt = (x, y) => { const el = document.elementFromPoint(x, y); const d = el && el.closest(".cell"); return d && boardEl.contains(d) ? +d.dataset.i : null; };
-
-  function beginPaint(i) {
-    painting = { on: !G.marks[i], seen: new Set([i]) };
-    setX(i, painting.on);
-  }
-  boardEl.addEventListener("pointerdown", e => {
-    const d = e.target.closest(".cell");
-    if (!d || !G || G.done) return;
-    e.preventDefault();
-    const i = +d.dataset.i;
-    if (e.button === 2) { beginPaint(i); return; }
-    if (tool === "x") { beginPaint(i); return; }
-    press = { i, long: false, t: setTimeout(() => { if (!press) return; press.long = true; buzz(15); beginPaint(press.i); }, 430) };
-  });
-  boardEl.addEventListener("pointermove", e => {
-    const i = cellAt(e.clientX, e.clientY);
-    if (painting) {
-      if (i != null && !painting.seen.has(i)) { painting.seen.add(i); setX(i, painting.on); }
-    } else if (press && !press.long && i !== press.i) {
-      clearTimeout(press.t); press = null;
-    }
-  });
-  const endPointer = (e, cancelled) => {
-    if (press) { clearTimeout(press.t); if (!press.long && !cancelled) tapCat(press.i); press = null; }
-    if (painting) { painting = null; save(); }
-  };
-  window.addEventListener("pointerup", e => endPointer(e, false));
-  window.addEventListener("pointercancel", e => endPointer(e, true));
-  boardEl.addEventListener("contextmenu", e => e.preventDefault());
-
-  function setTool(t) {
-    tool = t;
-    $("toolCat").setAttribute("aria-pressed", String(t === "cat"));
-    $("toolX").setAttribute("aria-pressed", String(t === "x"));
-  }
-  $("toolCat").onclick = () => setTool("cat");
-  $("toolX").onclick = () => setTool("x");
-  $("hintBtn").onclick = hint;
-  $("resetBtn").onclick = restart;
-  $("newBtn").onclick = () => newGame(!G || G.key === "ad" ? "8" : G.key);
-  document.querySelectorAll(".lv[data-key]").forEach(b => b.onclick = () => newGame(b.dataset.key));
-
-  const autoBox = $("autoMark");
-  autoBox.checked = fullAuto;
-  autoBox.onchange = () => { fullAuto = autoBox.checked; store.set("michis:soloVecinos", !fullAuto); };
-
-  document.querySelectorAll("[data-lang]").forEach(b => b.onclick = () => {
-    lang = b.dataset.lang; store.set("michis:idioma", lang); applyLang();
-  });
-
-  const saved = load();
-  if (saved) { G = saved; buildBoard(); renderStatus(); }
-  else newGame("ad");
-  applyLang();
-})();
+const n = list.children.length;
+count.textContent = n === 1 ? "1 juego" : n + " juegos";
+empty.hidden = n !== 0;
 </script>
 </body>
 </html>
