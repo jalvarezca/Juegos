@@ -1,0 +1,1611 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dulces: junta tres iguales</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f3eef8; --surface:#fdfbff; --chip:#efe8f7; --ink:#2b2851; --muted:#6b6890;
+  --board:#ffffff; --tile-a:#f5f0fb; --tile-b:#ece4f6; --edge:rgba(43,40,81,.08); --lift:0 10px 28px rgba(43,40,81,.12);
+  --accent:#ff5fa2; --good:#1f9e55; --warn:#e5484d; --gold:#ffc83d; --gold-edge:#d99a00;
+  --jelly:rgba(255,95,162,.36); --jelly2:rgba(214,40,120,.62);
+  --scrim:rgba(23,22,42,.5);
+  color-scheme:light;
+  box-sizing:border-box;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#17162a; --surface:#221f3a; --chip:#2c2948; --ink:#ecebfa; --muted:#a6a3c8;
+    --board:#1f1c35; --tile-a:#2a2645; --tile-b:#24203d; --edge:rgba(236,235,250,.07); --lift:0 10px 28px rgba(0,0,0,.4);
+    --good:#4cd685; --warn:#ff6b6b; --jelly:rgba(255,95,162,.30); --jelly2:rgba(255,95,162,.6); --scrim:rgba(0,0,0,.62);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#17162a; --surface:#221f3a; --chip:#2c2948; --ink:#ecebfa; --muted:#a6a3c8;
+  --board:#1f1c35; --tile-a:#2a2645; --tile-b:#24203d; --edge:rgba(236,235,250,.07); --lift:0 10px 28px rgba(0,0,0,.4);
+  --good:#4cd685; --warn:#ff6b6b; --jelly:rgba(255,95,162,.30); --jelly2:rgba(255,95,162,.6); --scrim:rgba(0,0,0,.62);
+  color-scheme:dark;
+}
+html{height:100%}
+*,*::before,*::after{box-sizing:inherit}
+body{
+  margin:0;min-height:100%;color:var(--ink);
+  font-family:"Baloo 2",ui-rounded,"SF Pro Rounded","Segoe UI",Roboto,system-ui,sans-serif;
+  background:
+    radial-gradient(800px 380px at 10% -10%, rgba(255,95,162,.22), transparent 60%),
+    radial-gradient(700px 360px at 110% 0%, rgba(148,121,214,.26), transparent 55%),
+    var(--paper);
+  -webkit-tap-highlight-color:transparent;
+}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+.app{
+  max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:10px;
+  padding:max(14px, env(safe-area-inset-top)) 14px max(22px, env(safe-area-inset-bottom));
+}
+.back{
+  align-self:flex-start;margin:-4px 0 -4px;padding:2px;border-radius:8px;
+  color:var(--muted);font-weight:700;font-size:14px;line-height:1.2;text-decoration:none;
+}
+.back:hover{color:var(--ink)}
+
+/* Cabecera */
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand{display:flex;align-items:center;gap:8px;min-width:0}
+.brand svg{width:42px;height:42px;flex:none}
+.brand h1{margin:0;font-size:34px;line-height:1;font-weight:800;letter-spacing:-.5px}
+.brand p{margin:2px 0 0;font-size:14px;line-height:1.1;color:var(--muted);font-weight:600}
+.lvl{
+  display:flex;align-items:center;gap:6px;border:0;padding:6px 14px;border-radius:999px;cursor:pointer;
+  background:var(--surface);box-shadow:inset 0 0 0 1px var(--edge);font-weight:700;font-size:16px;white-space:nowrap;
+}
+.lvl b{font-size:22px;line-height:1;font-variant-numeric:tabular-nums}
+
+/* Marcadores */
+.hud{display:grid;grid-template-columns:auto 1fr;gap:8px}
+.box{
+  display:flex;flex-direction:column;justify-content:center;min-height:66px;padding:6px 12px;
+  border-radius:18px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--edge);
+}
+.lbl{font-size:12.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;line-height:1.15}
+.moves{align-items:center;min-width:96px}
+.moves b{font-size:36px;line-height:1;font-weight:800;font-variant-numeric:tabular-nums}
+.moves.low b{color:var(--warn)}
+.moves.bump b{animation:bump .3s ease}
+@keyframes bump{40%{transform:scale(1.25)}}
+.goal-items{display:flex;flex-wrap:wrap;align-items:center;gap:2px 12px;margin-top:2px}
+.gi{display:flex;align-items:center;gap:3px;font-weight:800;font-size:21px;line-height:1;font-variant-numeric:tabular-nums}
+.gi svg{width:30px;height:30px;flex:none;overflow:visible}
+.gi .ok{display:none;width:20px;height:20px;color:var(--good)}
+.gi.done{color:var(--good)}
+.gi.done .n{display:none}
+.gi.done .ok{display:block}
+.goal-text{font-weight:700;font-size:17px;line-height:1.15}
+.goal-text.done{color:var(--good)}
+
+.scorebar{
+  display:flex;align-items:center;gap:10px;padding:8px 14px 8px 12px;
+  border-radius:18px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--edge);
+}
+.score{display:flex;flex-direction:column;min-width:84px}
+.score b{font-size:23px;line-height:1.05;font-weight:800;font-variant-numeric:tabular-nums}
+.meter{position:relative;flex:1;height:14px;margin:0 8px 0 2px;border-radius:999px;background:var(--chip)}
+.meter .fill{position:absolute;inset:0 auto 0 0;width:0;border-radius:inherit;background:linear-gradient(90deg,#ffa8cd,var(--accent));transition:width .35s ease}
+.meter .mk{
+  position:absolute;top:50%;width:24px;height:24px;transform:translate(-50%,-50%);
+  fill:var(--surface);stroke:var(--muted);stroke-width:1.6;stroke-linejoin:round;
+}
+.meter .mk.on{fill:var(--gold);stroke:var(--gold-edge);animation:mkpop .4s cubic-bezier(.3,1.6,.5,1)}
+@keyframes mkpop{0%{transform:translate(-50%,-50%) scale(.3)}100%{transform:translate(-50%,-50%) scale(1)}}
+
+/* Tablero */
+.board-wrap{position:relative;padding:8px;border-radius:22px;background:var(--board);box-shadow:var(--lift)}
+#board{
+  position:relative;width:100%;aspect-ratio:1;border-radius:14px;
+  touch-action:none;user-select:none;-webkit-user-select:none;outline:none;cursor:pointer;
+}
+#board:focus-visible{outline:3px solid var(--accent);outline-offset:5px}
+.tiles{position:absolute;inset:0;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);border-radius:14px;overflow:hidden}
+.tile{position:relative;background:var(--tile-a)}
+.tile.alt{background:var(--tile-b)}
+.tile::after{
+  content:"";position:absolute;inset:5%;border-radius:24%;background:var(--jelly);opacity:0;transform:scale(.5);
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.07), inset 0 3px 0 rgba(255,255,255,.35);
+  transition:opacity .25s ease, transform .25s ease, background-color .25s ease;
+}
+.tile.j1::after,.tile.j2::after{opacity:1;transform:none}
+.tile.j2::after{background:var(--jelly2)}
+.tile.splash::after{animation:splash .35s ease}
+@keyframes splash{40%{transform:scale(1.18)}}
+.pieces,.fx{position:absolute;inset:0;pointer-events:none}
+.pieces{overflow:hidden;border-radius:14px}
+.pc{
+  position:absolute;left:0;top:0;width:12.5%;height:12.5%;
+  transform:translate(calc(var(--c) * 100%), calc(var(--r) * 100%));
+  transition:transform .18s ease;
+}
+.pc svg{display:block;width:100%;height:100%;padding:6%;overflow:visible;transition:transform .15s ease, filter .15s ease}
+.pc.sel svg{transform:scale(1.16);filter:drop-shadow(0 0 5px rgba(255,255,255,.95)) drop-shadow(0 3px 6px rgba(0,0,0,.25))}
+.pc.hint svg{animation:wiggle 1.1s ease-in-out infinite}
+.pc.born svg{animation:born .34s cubic-bezier(.3,1.6,.5,1)}
+.pc.pop svg{animation:pop .26s ease-in forwards}
+.pc.armed svg{animation:armed .45s ease-in-out infinite alternate}
+@keyframes wiggle{0%,55%,100%{transform:none}10%{transform:rotate(-12deg) scale(1.1)}22%{transform:rotate(10deg) scale(1.1)}34%{transform:rotate(-6deg) scale(1.05)}45%{transform:rotate(3deg)}}
+@keyframes born{0%{transform:scale(.2)}100%{transform:none}}
+@keyframes pop{0%{transform:none}35%{transform:scale(1.25);opacity:1}100%{transform:scale(0);opacity:0}}
+@keyframes armed{from{transform:none;filter:drop-shadow(0 0 2px #fff)}to{transform:scale(1.12);filter:drop-shadow(0 0 10px #fff) brightness(1.2)}}
+.cursor{
+  position:absolute;left:0;top:0;width:12.5%;height:12.5%;border-radius:24%;pointer-events:none;opacity:0;
+  transform:translate(calc(var(--c) * 100%), calc(var(--r) * 100%));
+  box-shadow:inset 0 0 0 3px var(--accent), 0 0 0 2px var(--board);
+  transition:transform .12s ease, opacity .15s ease;
+}
+#board.kbd:focus .cursor{opacity:1}
+
+/* Efectos */
+.beam{position:absolute;border-radius:999px;background:#fff;box-shadow:0 0 16px 6px rgba(255,255,255,.85), 0 0 4px 2px rgba(255,95,162,.6)}
+.beam.row{left:0;width:100%;top:calc(var(--r) * 12.5% + 4.75%);height:3%;animation:beamx .4s ease-out forwards}
+.beam.col{top:0;height:100%;left:calc(var(--c) * 12.5% + 4.75%);width:3%;animation:beamy .4s ease-out forwards}
+@keyframes beamx{0%{transform:scaleX(0);opacity:1}45%{transform:scaleX(1);opacity:1}100%{transform:scaleX(1);opacity:0}}
+@keyframes beamy{0%{transform:scaleY(0);opacity:1}45%{transform:scaleY(1);opacity:1}100%{transform:scaleY(1);opacity:0}}
+.ring{
+  position:absolute;border-radius:50%;
+  left:calc((var(--c) + .5) * 12.5%);top:calc((var(--r) + .5) * 12.5%);
+  width:calc(var(--d) * 12.5%);height:calc(var(--d) * 12.5%);
+  background:radial-gradient(circle, rgba(255,255,255,.95) 0%, rgba(255,214,120,.75) 38%, rgba(255,95,162,.25) 60%, transparent 72%);
+  animation:ring .45s ease-out forwards;
+}
+@keyframes ring{0%{transform:translate(-50%,-50%) scale(.2);opacity:1}100%{transform:translate(-50%,-50%) scale(1.15);opacity:0}}
+.pts{
+  position:absolute;left:calc((var(--x) + .5) * 12.5%);top:calc((var(--y) + .5) * 12.5%);
+  font-weight:800;font-size:clamp(17px, 5vw, 25px);line-height:1;color:#fff;white-space:nowrap;
+  -webkit-text-stroke:5px var(--glow);paint-order:stroke fill;
+  animation:pts .85s ease-out forwards;
+}
+@keyframes pts{0%{opacity:0;transform:translate(-50%,-30%) scale(.6)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}100%{opacity:0;transform:translate(-50%,-170%)}}
+.toast{
+  position:absolute;left:50%;top:44%;z-index:5;pointer-events:none;opacity:0;white-space:nowrap;
+  font-weight:800;font-size:clamp(32px, 10vw, 50px);line-height:1;color:#fff;
+  -webkit-text-stroke:8px #d6287a;paint-order:stroke fill;filter:drop-shadow(0 6px 10px rgba(0,0,0,.25));
+  transform:translate(-50%,-50%);
+}
+.toast.on{animation:toast 1.15s ease forwards}
+@keyframes toast{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.4) rotate(-8deg)}
+  18%{opacity:1;transform:translate(-50%,-50%) scale(1.12) rotate(-4deg)}
+  30%{transform:translate(-50%,-50%) scale(1) rotate(-4deg)}
+  78%{opacity:1}
+  100%{opacity:0;transform:translate(-50%,-75%) rotate(-4deg)}
+}
+
+/* Herramientas */
+.tools{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.icon-btn{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:7px 4px;
+  border:0;border-radius:16px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--edge);
+  font-weight:700;font-size:13.5px;line-height:1.1;cursor:pointer;
+}
+.icon-btn svg{width:24px;height:24px}
+.icon-btn:active,.big:active,.lv:active,.lvl:active{transform:scale(.96)}
+.icon-btn[aria-pressed="false"] .snd-on,.icon-btn[aria-pressed="true"] .snd-off{display:none}
+.icon-btn[aria-pressed="false"]{color:var(--muted)}
+
+.foot{display:flex;flex-direction:column;gap:8px;color:var(--muted);font-size:14px;line-height:1.3;font-weight:600}
+.langrow{display:flex;align-items:center;gap:10px;color:var(--ink)}
+.seg{display:flex;padding:4px;gap:2px;border-radius:16px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--edge)}
+.seg button{border:0;background:none;padding:6px 12px;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+
+/* Ventanas */
+.modal{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;padding:20px;background:var(--scrim)}
+.modal.on{display:flex}
+.card{
+  width:100%;max-width:380px;max-height:100%;overflow:auto;padding:22px 20px 18px;border-radius:26px;
+  background:var(--surface);text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.25);animation:rise .3s cubic-bezier(.2,1.3,.5,1);
+}
+@keyframes rise{from{transform:translateY(20px) scale(.96);opacity:0}}
+.card h2{margin:0;font-size:30px;line-height:1.1;font-weight:800}
+.card p{margin:6px 0 0;color:var(--muted);font-weight:600;font-size:16px;line-height:1.3}
+.card p:empty{display:none}
+.mgoal{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 16px;margin:14px 0 2px}
+.mgoal .gi{font-size:24px}
+.mgoal .gi svg{width:38px;height:38px}
+.bigstars{display:flex;justify-content:center;align-items:flex-end;gap:6px;margin:12px 0 4px}
+.bigstars svg{width:58px;height:58px;fill:var(--chip);stroke:var(--edge);stroke-width:1;stroke-linejoin:round}
+.bigstars svg:nth-child(2){width:70px;height:70px;margin-bottom:8px}
+.bigstars svg.on{fill:var(--gold);stroke:var(--gold-edge);animation:starpop .5s cubic-bezier(.3,1.6,.5,1) both}
+.bigstars svg.on:nth-child(2){animation-delay:.25s}
+.bigstars svg.on:nth-child(3){animation-delay:.5s}
+@keyframes starpop{0%{transform:scale(0) rotate(-40deg)}100%{transform:none}}
+.record{margin-top:6px;font-weight:700;color:var(--good)}
+.record:empty{display:none}
+.actions{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.big{border:0;border-radius:16px;padding:12px;font-weight:800;font-size:17px;cursor:pointer;background:var(--chip)}
+.big.primary{background:var(--accent);color:#fff}
+.levels{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:14px 0 2px}
+.lv{
+  position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:1;
+  border:0;border-radius:16px;background:var(--chip);font-weight:800;font-size:21px;line-height:1;cursor:pointer;
+}
+.lv .st{display:flex;gap:1px;margin-top:3px}
+.lv .st svg{width:12px;height:12px;fill:var(--edge);stroke:var(--muted);stroke-width:1.5;stroke-linejoin:round}
+.lv .st svg.on{fill:var(--gold);stroke:var(--gold-edge)}
+.lv.cur{box-shadow:inset 0 0 0 3px var(--accent)}
+.lv:disabled{opacity:.45;cursor:default}
+.lv .lock{width:18px;height:18px}
+.total{margin-top:4px;font-weight:700;color:var(--ink)}
+
+@media (max-height:740px){
+  .app{gap:8px;padding-top:10px}
+  .brand h1{font-size:28px}
+  .brand svg{width:36px;height:36px}
+  .box{min-height:58px}
+  .moves b{font-size:30px}
+}
+@media (prefers-reduced-motion: reduce){
+  .pc.hint svg{animation:none;filter:drop-shadow(0 0 6px #fff) brightness(1.2)}
+  .pc.armed svg{animation:none;filter:drop-shadow(0 0 8px #fff) brightness(1.2)}
+  .pc.born svg,.card,.meter .mk.on,.bigstars svg.on,.moves.bump b,.tile.splash::after{animation:none}
+}
+</style>
+</head>
+<body>
+<main class="app">
+  <a class="back" href="../" data-i18n="menu">Volver al menú</a>
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#c0"/></svg>
+      <div>
+        <h1 data-i18n="title">Dulces</h1>
+        <p data-i18n="tagline">Junta tres o más iguales</p>
+      </div>
+    </div>
+    <button class="lvl" id="levelBtn" type="button"><span data-i18n="level">Nivel</span> <b id="levelNum">1</b></button>
+  </header>
+
+  <section class="hud">
+    <div class="box moves" id="movesBox">
+      <span class="lbl" data-i18n="moves">Movimientos</span>
+      <b id="moves">0</b>
+    </div>
+    <div class="box">
+      <span class="lbl" data-i18n="goal">Objetivo</span>
+      <div class="goal-items" id="goal"></div>
+    </div>
+  </section>
+
+  <div class="scorebar">
+    <div class="score"><span class="lbl" data-i18n="score">Puntos</span><b id="score">0</b></div>
+    <div class="meter" id="meter" aria-hidden="true"><div class="fill" id="fill"></div></div>
+  </div>
+
+  <div class="board-wrap">
+    <div id="board" tabindex="0" role="application" data-i18n-aria="board" aria-label="Tablero de dulces" aria-describedby="kbdHelp">
+      <div class="tiles" id="tiles"></div>
+      <div class="pieces" id="pieces"></div>
+      <div class="cursor" id="cursor"></div>
+      <div class="fx" id="fx"></div>
+    </div>
+    <div class="toast" id="toast" aria-hidden="true"></div>
+  </div>
+
+  <div class="tools">
+    <button class="icon-btn" id="hintBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg><span data-i18n="hint">Pista</span></button>
+    <button class="icon-btn" id="restartBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v5h5"/></svg><span data-i18n="restart">Reiniciar</span></button>
+    <button class="icon-btn" id="mapBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg><span data-i18n="levels">Niveles</span></button>
+    <button class="icon-btn" id="soundBtn" type="button" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path class="snd-on" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/><path class="snd-off" d="M16 9.5l5 5M21 9.5l-5 5"/></svg><span data-i18n="sound">Sonido</span></button>
+  </div>
+
+  <div class="foot">
+    <span data-i18n="help">Desliza un dulce hacia una casilla vecina, o toca dos dulces seguidos, para cambiarlos de sitio. Si se juntan 3 o más iguales en línea, desaparecen.</span>
+    <span data-i18n="specials">4 en línea crean un dulce rayado, una L o una T crean uno envuelto y 5 en línea, una bomba de color. Cambia dos especiales entre sí para hacer un combo.</span>
+    <span id="kbdHelp" data-i18n="kbd">Con teclado: flechas para moverte, Intro para elegir un dulce y una flecha para cambiarlo. H muestra una pista.</span>
+    <div class="langrow">
+      <span id="langLabel" data-i18n="lang">Idioma</span>
+      <div class="seg" role="group" aria-labelledby="langLabel">
+        <button type="button" data-lang="es" lang="es" aria-pressed="true">Español</button>
+        <button type="button" data-lang="en" lang="en" aria-pressed="false">English</button>
+        <button type="button" data-lang="fr" lang="fr" aria-pressed="false">Français</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="sr" id="live" aria-live="polite"></div>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="card">
+    <h2 id="mTitle"></h2>
+    <p id="mText"></p>
+    <div id="mBody"></div>
+    <div class="actions" id="mActions"></div>
+  </div>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <radialGradient id="g0" cx=".36" cy=".3" r=".8"><stop offset="0" stop-color="#ffc4ca"/><stop offset=".5" stop-color="#ff4d5e"/><stop offset="1" stop-color="#b8132b"/></radialGradient>
+    <radialGradient id="g1" cx=".36" cy=".3" r=".8"><stop offset="0" stop-color="#ffe2b8"/><stop offset=".5" stop-color="#ff9a1f"/><stop offset="1" stop-color="#c25c00"/></radialGradient>
+    <radialGradient id="g2" cx=".4" cy=".3" r=".8"><stop offset="0" stop-color="#fff9cc"/><stop offset=".5" stop-color="#ffd23b"/><stop offset="1" stop-color="#c79200"/></radialGradient>
+    <radialGradient id="g3" cx=".36" cy=".3" r=".8"><stop offset="0" stop-color="#c9f8d5"/><stop offset=".5" stop-color="#3ccf6a"/><stop offset="1" stop-color="#11853a"/></radialGradient>
+    <radialGradient id="g4" cx=".36" cy=".3" r=".8"><stop offset="0" stop-color="#cbe7ff"/><stop offset=".5" stop-color="#3a9cff"/><stop offset="1" stop-color="#0e57ad"/></radialGradient>
+    <radialGradient id="g5" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#eed6ff"/><stop offset=".5" stop-color="#b25ff0"/><stop offset="1" stop-color="#6a1fab"/></radialGradient>
+    <radialGradient id="gb" cx=".36" cy=".3" r=".8"><stop offset="0" stop-color="#9a6a43"/><stop offset=".55" stop-color="#5a321a"/><stop offset="1" stop-color="#2a1509"/></radialGradient>
+
+    <path id="s0" d="M50 87C21 68 9 52 9 35 9 21 20 11 33 11c8 0 14 4 17 11 3-7 9-11 17-11 13 0 24 10 24 24 0 17-12 33-41 52z"/>
+    <path id="s1" d="M50 7q6 0 10 5l28 32q5 6 0 12L60 88q-4 5-10 5t-10-5L12 56q-5-6 0-12L40 12q4-5 10-5z"/>
+    <path id="s2" d="M50 14L60.6 38.4L87 40.6L67.1 58.6L73.5 84.4L50 70.5L26.5 84.4L32.9 58.6L13 40.6L39.4 38.4Z"/>
+    <rect id="s3" x="14" y="14" width="72" height="72" rx="17"/>
+    <circle id="s4" cx="50" cy="50" r="38"/>
+    <path id="s5" d="M50 17L86 79L14 79Z"/>
+
+    <clipPath id="k0"><use href="#s0"/></clipPath>
+    <clipPath id="k1"><use href="#s1"/></clipPath>
+    <clipPath id="k2"><use href="#s2"/></clipPath>
+    <clipPath id="k3"><use href="#s3"/></clipPath>
+    <clipPath id="k4"><use href="#s4"/></clipPath>
+    <clipPath id="k5"><use href="#s5"/></clipPath>
+
+    <symbol id="c0" viewBox="0 0 100 100">
+      <use href="#s0" fill="#8f0f22" stroke="#8f0f22" stroke-width="6" stroke-linejoin="round"/>
+      <use href="#s0" fill="url(#g0)"/>
+      <ellipse cx="30" cy="29" rx="10" ry="6" transform="rotate(-35 30 29)" fill="#fff" opacity=".7"/>
+    </symbol>
+    <symbol id="c1" viewBox="0 0 100 100">
+      <use href="#s1" fill="#9a4800" stroke="#9a4800" stroke-width="6" stroke-linejoin="round"/>
+      <use href="#s1" fill="url(#g1)"/>
+      <ellipse cx="40" cy="31" rx="10" ry="5" transform="rotate(-48 40 31)" fill="#fff" opacity=".7"/>
+    </symbol>
+    <symbol id="c2" viewBox="0 0 100 100">
+      <use href="#s2" fill="#a37700" stroke="#a37700" stroke-width="14" stroke-linejoin="round"/>
+      <use href="#s2" fill="url(#g2)" stroke="url(#g2)" stroke-width="8" stroke-linejoin="round"/>
+      <ellipse cx="50" cy="34" rx="4" ry="8" fill="#fff" opacity=".75"/>
+    </symbol>
+    <symbol id="c3" viewBox="0 0 100 100">
+      <use href="#s3" fill="#0d6b2e" stroke="#0d6b2e" stroke-width="6" stroke-linejoin="round"/>
+      <use href="#s3" fill="url(#g3)"/>
+      <ellipse cx="34" cy="31" rx="12" ry="6" transform="rotate(-25 34 31)" fill="#fff" opacity=".65"/>
+    </symbol>
+    <symbol id="c4" viewBox="0 0 100 100">
+      <use href="#s4" fill="#0b4590" stroke="#0b4590" stroke-width="6"/>
+      <use href="#s4" fill="url(#g4)"/>
+      <path d="M50 50m-20 0a20 20 0 0 1 20-20a14 14 0 0 1 14 14a9 9 0 0 1-9 9" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".35"/>
+      <ellipse cx="35" cy="31" rx="11" ry="6" transform="rotate(-35 35 31)" fill="#fff" opacity=".7"/>
+    </symbol>
+    <symbol id="c5" viewBox="0 0 100 100">
+      <use href="#s5" fill="#541889" stroke="#541889" stroke-width="15" stroke-linejoin="round"/>
+      <use href="#s5" fill="url(#g5)" stroke="url(#g5)" stroke-width="9" stroke-linejoin="round"/>
+      <ellipse cx="42" cy="48" rx="4" ry="10" transform="rotate(30 42 48)" fill="#fff" opacity=".7"/>
+    </symbol>
+
+    <symbol id="sth" viewBox="0 0 100 100"><g fill="#fff" opacity=".92"><rect y="29" width="100" height="8"/><rect y="46" width="100" height="8"/><rect y="63" width="100" height="8"/></g></symbol>
+    <symbol id="stv" viewBox="0 0 100 100"><g fill="#fff" opacity=".92"><rect x="29" width="8" height="100"/><rect x="46" width="8" height="100"/><rect x="63" width="8" height="100"/></g></symbol>
+
+    <symbol id="wrap" viewBox="0 0 100 100">
+      <path d="M20 50L3 32Q-1 50 3 68Z" fill="currentColor" stroke="rgba(0,0,0,.3)" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M80 50L97 32Q101 50 97 68Z" fill="currentColor" stroke="rgba(0,0,0,.3)" stroke-width="2.5" stroke-linejoin="round"/>
+      <rect x="14" y="14" width="72" height="72" rx="21" fill="currentColor" opacity=".38"/>
+      <rect x="14" y="14" width="72" height="72" rx="21" fill="none" stroke="currentColor" stroke-width="6"/>
+      <rect x="14" y="14" width="72" height="72" rx="21" fill="none" stroke="rgba(0,0,0,.22)" stroke-width="1.5"/>
+      <path d="M23 31Q29 21 41 20" stroke="#fff" stroke-width="4.5" fill="none" stroke-linecap="round" opacity=".85"/>
+    </symbol>
+
+    <symbol id="bomb" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="41" fill="#1e0f06"/>
+      <circle cx="50" cy="50" r="38" fill="url(#gb)"/>
+      <rect x="29" y="41" width="11" height="4.5" rx="2.25" fill="#ff4d5e" transform="rotate(35 34.5 43.25)"/>
+      <rect x="53" y="27" width="11" height="4.5" rx="2.25" fill="#ffd23b" transform="rotate(-20 58.5 29.25)"/>
+      <rect x="62" y="47" width="11" height="4.5" rx="2.25" fill="#3a9cff" transform="rotate(65 67.5 49.25)"/>
+      <rect x="39" y="61" width="11" height="4.5" rx="2.25" fill="#3ccf6a" transform="rotate(-40 44.5 63.25)"/>
+      <rect x="56" y="65" width="11" height="4.5" rx="2.25" fill="#ff9a1f" transform="rotate(20 61.5 67.25)"/>
+      <rect x="24" y="56" width="11" height="4.5" rx="2.25" fill="#b25ff0" transform="rotate(80 29.5 58.25)"/>
+      <rect x="44" y="44" width="11" height="4.5" rx="2.25" fill="#ffffff" transform="rotate(-70 49.5 46.25)"/>
+      <rect x="67" y="31" width="11" height="4.5" rx="2.25" fill="#ff4d5e" transform="rotate(50 72.5 33.25)"/>
+      <rect x="68" y="58" width="11" height="4.5" rx="2.25" fill="#ffd23b" transform="rotate(-30 73.5 60.25)"/>
+      <rect x="44" y="74" width="11" height="4.5" rx="2.25" fill="#b25ff0" transform="rotate(5 49.5 76.25)"/>
+      <rect x="38" y="22" width="11" height="4.5" rx="2.25" fill="#3ccf6a" transform="rotate(10 43.5 24.25)"/>
+      <ellipse cx="33" cy="33" rx="11" ry="6" transform="rotate(-38 33 33)" fill="#fff" opacity=".3"/>
+    </symbol>
+
+    <symbol id="jel" viewBox="0 0 100 100">
+      <rect x="10" y="12" width="80" height="78" rx="22" fill="#ff5fa2" opacity=".88"/>
+      <rect x="10" y="12" width="80" height="78" rx="22" fill="none" stroke="#c2185b" stroke-width="4"/>
+      <path d="M24 35Q28 23 42 21" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round" opacity=".85"/>
+      <circle cx="69" cy="67" r="5" fill="#fff" opacity=".5"/>
+    </symbol>
+    <symbol id="star" viewBox="0 0 24 24"><path d="M12 2.6l2.85 5.9 6.5.85-4.75 4.5 1.2 6.45L12 17.2l-5.8 3.1 1.2-6.45-4.75-4.5 6.5-.85z"/></symbol>
+    <symbol id="ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="currentColor"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="currentColor"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  </defs>
+</svg>
+
+<script>
+(() => {
+  "use strict";
+
+  // <motor> Lógica del juego, sin DOM. Cada jugada devuelve una lista de pasos que la interfaz anima.
+  const Engine = (() => {
+    const rnd = (S, n) => Math.floor(S.rng() * n);
+    const candy = (S, c, k) => ({ id: ++S.nextId, c, k: k || "n" });
+    const rowOf = (S, i) => Math.floor(i / S.C);
+    const colOf = (S, i) => i % S.C;
+    const isStripe = k => k === "h" || k === "v";
+    const matchable = d => d && d.k !== "b" && !d.armed;
+    const rowCells = (S, r) => Array.from({ length: S.C }, (_, c) => r * S.C + c);
+    const colCells = (S, c) => Array.from({ length: S.R }, (_, r) => r * S.C + c);
+    const SPECIAL_PTS = { h: 60, v: 60, w: 120, b: 200 };
+
+    function create(o) {
+      const S = { R: o.R || 8, C: o.C || 8, n: o.n || 6, rng: o.rng || Math.random, cells: [], jelly: [], nextId: 0 };
+      const N = S.R * S.C;
+      S.jelly = o.jelly && o.jelly.length === N ? o.jelly.slice() : new Array(N).fill(0);
+      fill(S);
+      return S;
+    }
+
+    // Tablero inicial sin líneas hechas y con varias jugadas posibles.
+    function fill(S) {
+      const { R, C } = S, N = R * C;
+      for (let t = 0; t < 500; t++) {
+        const cells = new Array(N).fill(null);
+        for (let i = 0; i < N; i++) {
+          const r = Math.floor(i / C), c = i % C, bad = [];
+          if (c >= 2 && cells[i - 1].c === cells[i - 2].c) bad.push(cells[i - 1].c);
+          if (r >= 2 && cells[i - C].c === cells[i - 2 * C].c) bad.push(cells[i - C].c);
+          const ok = [];
+          for (let k = 0; k < S.n; k++) if (!bad.includes(k)) ok.push(k);
+          cells[i] = candy(S, ok[rnd(S, ok.length)]);
+        }
+        S.cells = cells;
+        if (findMoves(S).length >= 3) return;
+      }
+    }
+
+    // Tramos de 3 o más del mismo color, en filas y columnas.
+    function findRuns(S) {
+      const { R, C, cells } = S, runs = [];
+      const key = i => (matchable(cells[i]) ? cells[i].c : -1);
+      const scan = (outer, len, at, dir) => {
+        for (let o = 0; o < outer; o++) {
+          let s = 0;
+          while (s < len) {
+            const k = key(at(o, s));
+            let e = s + 1;
+            if (k >= 0) while (e < len && key(at(o, e)) === k) e++;
+            if (k >= 0 && e - s >= 3) {
+              const list = [];
+              for (let x = s; x < e; x++) list.push(at(o, x));
+              runs.push({ dir, color: k, cells: list });
+            }
+            s = e;
+          }
+        }
+      };
+      scan(R, C, (r, c) => r * C + c, "h");
+      scan(C, R, (c, r) => r * C + c, "v");
+      return runs;
+    }
+
+    // Une los tramos que comparten casillas (formas en L, T o cruz).
+    function groupRuns(runs) {
+      const parent = runs.map((_, i) => i);
+      const find = x => (parent[x] === x ? x : (parent[x] = find(parent[x])));
+      const owner = new Map();
+      runs.forEach((run, ri) => run.cells.forEach(i => {
+        if (owner.has(i)) parent[find(ri)] = find(owner.get(i));
+        else owner.set(i, ri);
+      }));
+      const groups = new Map();
+      runs.forEach((run, ri) => {
+        const root = find(ri);
+        if (!groups.has(root)) groups.set(root, { color: run.color, runs: [], cells: new Set() });
+        const g = groups.get(root);
+        g.runs.push(run);
+        run.cells.forEach(i => g.cells.add(i));
+      });
+      return [...groups.values()];
+    }
+
+    // 5 en línea: bomba. L o T: envuelto. 4 en línea: rayado.
+    function specialFor(g, ctx) {
+      const longest = g.runs.reduce((a, b) => (b.cells.length > a.cells.length ? b : a));
+      const hasH = g.runs.some(r => r.dir === "h"), hasV = g.runs.some(r => r.dir === "v");
+      let kind = null;
+      if (longest.cells.length >= 5) kind = "b";
+      else if (hasH && hasV) kind = "w";
+      else if (longest.cells.length === 4) kind = "s";
+      if (!kind) return null;
+      const fromSwap = ctx && ctx.swap ? ctx.swap.find(i => g.cells.has(i)) : undefined;
+      let at;
+      if (fromSwap !== undefined) at = fromSwap;
+      else if (kind === "w") {
+        const inH = new Set();
+        g.runs.forEach(r => { if (r.dir === "h") r.cells.forEach(i => inH.add(i)); });
+        at = g.runs.filter(r => r.dir === "v").flatMap(r => r.cells).find(i => inH.has(i));
+        if (at === undefined) at = longest.cells[0];
+      } else at = longest.cells[Math.floor((longest.cells.length - 1) / 2)];
+      // Un deslizamiento horizontal da rayas verticales, y al revés.
+      if (kind === "s") kind = (fromSwap !== undefined ? ctx.dir : longest.dir) === "h" ? "v" : "h";
+      return { kind, at };
+    }
+
+    function around(S, i, rad) {
+      const r0 = rowOf(S, i), c0 = colOf(S, i), out = [];
+      for (let r = r0 - rad; r <= r0 + rad; r++)
+        for (let c = c0 - rad; c <= c0 + rad; c++)
+          if (r >= 0 && r < S.R && c >= 0 && c < S.C) out.push(r * S.C + c);
+      return out;
+    }
+
+    // Golpea casillas, activa los especiales en cadena y quita lo que cae.
+    function blast(S, seeds, o) {
+      o = o || {};
+      const cells = S.cells, cascade = o.cascade || 1;
+      const cleared = new Map(), stay = new Set(), hit = new Set();
+      const done = new Set(o.pre || []), fx = (o.fx || []).slice();
+      const queue = seeds.slice();
+      for (let q = 0; q < queue.length; q++) {
+        const i = queue[q];
+        hit.add(i);
+        const d = cells[i];
+        if (!d || cleared.has(i) || stay.has(i)) continue;
+        if (d.k !== "n" && !done.has(d.id)) {
+          done.add(d.id);
+          const r = rowOf(S, i), c = colOf(S, i);
+          if (d.k === "h") { fx.push({ t: "row", r, c }); queue.push(...rowCells(S, r)); }
+          else if (d.k === "v") { fx.push({ t: "col", r, c }); queue.push(...colCells(S, c)); }
+          else if (d.k === "w") {
+            fx.push({ t: "blast", r, c, rad: 1 });
+            queue.push(...around(S, i, 1));
+            // El envuelto explota dos veces: ahora y cuando termina de caer.
+            if (!d.armed) { d.armed = true; stay.add(i); continue; }
+          } else if (d.k === "b") {
+            const present = [...new Set(cells.filter((e, j) => e && e.k !== "b" && !cleared.has(j)).map(e => e.c))];
+            if (present.length) {
+              const k = present[rnd(S, present.length)];
+              fx.push({ t: "color", r, c, color: k });
+              cells.forEach((e, j) => { if (e && e.k !== "b" && e.c === k) queue.push(j); });
+            }
+          }
+        }
+        cleared.set(i, d);
+      }
+      const out = [];
+      for (const [i, d] of cleared) { cells[i] = null; out.push({ i, id: d.id, c: d.c, k: d.k }); }
+      const created = [];
+      for (const sp of o.create || []) {
+        let at = sp.at;
+        if (cells[at]) at = sp.alt.find(j => !cells[j]);
+        if (at === undefined) continue;
+        const nd = candy(S, sp.kind === "b" ? -1 : sp.color, sp.kind);
+        cells[at] = nd;
+        created.push({ i: at, candy: { id: nd.id, c: nd.c, k: nd.k } });
+      }
+      const jelly = [];
+      for (const i of hit) if (S.jelly[i] > 0) { S.jelly[i]--; jelly.push({ i, left: S.jelly[i] }); }
+      const counts = {};
+      const add = k => { counts[k] = (counts[k] || 0) + 1; };
+      for (const d of out) {
+        if (d.c >= 0) add(d.c);
+        if (isStripe(d.k)) add("s"); else if (d.k === "w") add("w"); else if (d.k === "b") add("b");
+      }
+      let points = out.length * 20 * cascade + jelly.length * 100;
+      for (const x of created) points += SPECIAL_PTS[x.candy.k];
+      return {
+        type: "clear", cascade, points, counts, fx, jelly, created,
+        cleared: out, stay: [...stay].map(i => ({ i, id: cells[i].id }))
+      };
+    }
+
+    function matchStep(S, ctx, cascade) {
+      const runs = findRuns(S);
+      if (!runs.length) return null;
+      const seeds = [], create = [];
+      for (const g of groupRuns(runs)) {
+        g.cells.forEach(i => seeds.push(i));
+        const sp = specialFor(g, ctx);
+        if (sp) create.push({ at: sp.at, kind: sp.kind, color: g.color, alt: [...g.cells] });
+      }
+      return blast(S, seeds, { cascade, create });
+    }
+
+    // Los dulces caen y entran nuevos por arriba.
+    function gravity(S) {
+      const { R, C, cells } = S, moves = [], spawns = [];
+      for (let c = 0; c < C; c++) {
+        let w = R - 1;
+        for (let r = R - 1; r >= 0; r--) {
+          const i = r * C + c, d = cells[i];
+          if (!d) continue;
+          if (r !== w) { cells[w * C + c] = d; cells[i] = null; moves.push({ id: d.id, to: w * C + c, dist: w - r }); }
+          w--;
+        }
+        const k = w + 1;
+        for (let r = w; r >= 0; r--) {
+          const d = candy(S, rnd(S, S.n));
+          cells[r * C + c] = d;
+          spawns.push({ candy: { id: d.id, c: d.c, k: d.k }, to: r * C + c, from: r - k, dist: k });
+        }
+      }
+      return { type: "fall", moves, spawns };
+    }
+
+    function settle(S, steps, cascade) {
+      steps.push(gravity(S));
+      for (let guard = 0; guard < 30; guard++) {
+        const armed = [];
+        S.cells.forEach((d, i) => { if (d && d.armed) armed.push(i); });
+        if (!armed.length) break;
+        steps.push(blast(S, armed, { cascade }));
+        steps.push(gravity(S));
+      }
+    }
+
+    function chain(S, steps, ctx, cascade) {
+      for (let guard = 0; guard < 60; guard++) {
+        const st = matchStep(S, guard === 0 ? ctx : null, cascade);
+        if (!st) break;
+        steps.push(st);
+        settle(S, steps, cascade);
+        cascade++;
+      }
+      return cascade;
+    }
+
+    const adjacent = (S, a, b) => Math.abs(rowOf(S, a) - rowOf(S, b)) + Math.abs(colOf(S, a) - colOf(S, b)) === 1;
+    const swap = (S, a, b) => { const t = S.cells[a]; S.cells[a] = S.cells[b]; S.cells[b] = t; };
+    const isCombo = (A, B) => A.k === "b" || B.k === "b" || (A.k !== "n" && B.k !== "n");
+
+    // Combinaciones de dos especiales (o bomba con cualquier dulce). t: casilla destino.
+    function combo(S, t, o, steps) {
+      const cells = S.cells, X = cells[t], Y = cells[o];
+      const r = rowOf(S, t), c = colOf(S, t), fx = [];
+      let seeds, pre;
+      if (X.k === "b" && Y.k === "b") {
+        seeds = cells.map((_, i) => i);
+        pre = [X.id, Y.id];
+        fx.push({ t: "all", r, c });
+      } else if (X.k === "b" || Y.k === "b") {
+        const bi = X.k === "b" ? t : o, other = X.k === "b" ? Y : X, k = other.c, targets = [];
+        cells.forEach((d, i) => { if (d && d.k !== "b" && d.c === k) targets.push(i); });
+        if (other.k !== "n") {
+          const list = [];
+          for (const i of targets) {
+            const d = cells[i];
+            if (d.k === "n") { d.k = other.k === "w" ? "w" : (rnd(S, 2) ? "h" : "v"); list.push({ i, id: d.id, c: d.c, k: d.k }); }
+          }
+          if (list.length) steps.push({ type: "transform", list });
+        }
+        seeds = [bi, ...targets];
+        pre = [cells[bi].id];
+        fx.push({ t: "color", r: rowOf(S, bi), c: colOf(S, bi), color: k });
+      } else {
+        pre = [X.id, Y.id];
+        if (isStripe(X.k) && isStripe(Y.k)) {
+          seeds = [...rowCells(S, r), ...colCells(S, c)];
+          fx.push({ t: "row", r, c }, { t: "col", r, c });
+        } else if (X.k === "w" && Y.k === "w") {
+          seeds = around(S, t, 2);
+          fx.push({ t: "blast", r, c, rad: 2 });
+        } else {
+          seeds = [];
+          for (let d = -1; d <= 1; d++) {
+            if (r + d >= 0 && r + d < S.R) { seeds.push(...rowCells(S, r + d)); fx.push({ t: "row", r: r + d, c }); }
+            if (c + d >= 0 && c + d < S.C) { seeds.push(...colCells(S, c + d)); fx.push({ t: "col", r, c: c + d }); }
+          }
+        }
+      }
+      steps.push(blast(S, seeds, { pre, cascade: 1, fx }));
+    }
+
+    // Jugada del jugador: mueve el dulce de a hacia b.
+    function move(S, a, b) {
+      const A = S.cells[a], B = S.cells[b];
+      if (!A || !B || !adjacent(S, a, b)) return { ok: false, steps: [] };
+      const dir = rowOf(S, a) === rowOf(S, b) ? "h" : "v";
+      const steps = [{ type: "swap", a, b, ids: [A.id, B.id] }];
+      swap(S, a, b);
+      if (isCombo(A, B)) {
+        combo(S, b, a, steps);
+        settle(S, steps, 1);
+        chain(S, steps, null, 2);
+        return { ok: true, steps };
+      }
+      if (!findRuns(S).length) {
+        swap(S, a, b);
+        steps.push({ type: "swapBack", a, b, ids: [A.id, B.id] });
+        return { ok: false, steps };
+      }
+      chain(S, steps, { swap: [b, a], dir }, 1);
+      return { ok: true, steps };
+    }
+
+    function matchAt(S, i) {
+      const { R, C, cells } = S, d = cells[i];
+      if (!matchable(d)) return false;
+      const r = rowOf(S, i), c = colOf(S, i);
+      const same = j => matchable(cells[j]) && cells[j].c === d.c;
+      let n = 1;
+      for (let x = c - 1; x >= 0 && same(r * C + x); x--) n++;
+      for (let x = c + 1; x < C && same(r * C + x); x++) n++;
+      if (n >= 3) return true;
+      n = 1;
+      for (let y = r - 1; y >= 0 && same(y * C + c); y--) n++;
+      for (let y = r + 1; y < R && same(y * C + c); y++) n++;
+      return n >= 3;
+    }
+
+    // Todas las jugadas válidas, como pares de casillas.
+    function findMoves(S) {
+      const { R, C, cells } = S, out = [];
+      for (let i = 0; i < R * C; i++) {
+        const r = rowOf(S, i), c = colOf(S, i);
+        for (const j of [c < C - 1 ? i + 1 : -1, r < R - 1 ? i + C : -1]) {
+          if (j < 0) continue;
+          const A = cells[i], B = cells[j];
+          if (!A || !B) continue;
+          if (isCombo(A, B)) { out.push([i, j]); continue; }
+          if (A.c === B.c) continue;
+          swap(S, i, j);
+          const ok = matchAt(S, i) || matchAt(S, j);
+          swap(S, i, j);
+          if (ok) out.push([i, j]);
+        }
+      }
+      return out;
+    }
+
+    // Mezcla cuando no quedan jugadas.
+    function shuffle(S) {
+      for (let t = 0; t < 300; t++) {
+        const items = S.cells.slice();
+        for (let i = items.length - 1; i > 0; i--) { const j = rnd(S, i + 1); const x = items[i]; items[i] = items[j]; items[j] = x; }
+        S.cells = items;
+        if (!findRuns(S).length && findMoves(S).length) return { type: "shuffle", moves: items.map((d, i) => ({ id: d.id, to: i })) };
+      }
+      fill(S);
+      return { type: "rebuild" };
+    }
+
+    // Final del nivel: cada movimiento que sobra se vuelve un rayado y todo explota.
+    function rush(S, movesLeft) {
+      const steps = [], normals = [];
+      S.cells.forEach((d, i) => { if (d && d.k === "n") normals.push(i); });
+      for (let i = normals.length - 1; i > 0; i--) { const j = rnd(S, i + 1); const x = normals[i]; normals[i] = normals[j]; normals[j] = x; }
+      const list = normals.slice(0, Math.min(movesLeft, 12)).map(i => {
+        const d = S.cells[i];
+        d.k = rnd(S, 2) ? "h" : "v";
+        return { i, id: d.id, c: d.c, k: d.k };
+      });
+      if (list.length) steps.push({ type: "transform", list, rush: true });
+      let cascade = 1;
+      for (let round = 0; round < 8; round++) {
+        const sp = [];
+        S.cells.forEach((d, i) => { if (d && d.k !== "n") sp.push(i); });
+        if (!sp.length) break;
+        steps.push(blast(S, sp, { cascade }));
+        settle(S, steps, cascade);
+        cascade = chain(S, steps, null, cascade + 1);
+      }
+      return steps;
+    }
+
+    function dump(S) {
+      return { R: S.R, C: S.C, n: S.n, jelly: S.jelly.slice(), cells: S.cells.map(d => [d.c, d.k]) };
+    }
+
+    function restore(data, rng) {
+      if (!data || !Array.isArray(data.cells) || !Array.isArray(data.jelly)) return null;
+      const R = data.R | 0, C = data.C | 0, n = data.n | 0;
+      if (R < 3 || C < 3 || n < 3 || n > 6 || data.cells.length !== R * C || data.jelly.length !== R * C) return null;
+      const S = { R, C, n, rng: rng || Math.random, cells: [], jelly: data.jelly.map(x => Math.max(0, Math.min(2, x | 0))), nextId: 0 };
+      for (const cell of data.cells) {
+        if (!Array.isArray(cell)) return null;
+        const [c, k] = cell;
+        if (!["n", "h", "v", "w", "b"].includes(k)) return null;
+        if (k === "b" ? c !== -1 : !(Number.isInteger(c) && c >= 0 && c < n)) return null;
+        S.cells.push(candy(S, c, k));
+      }
+      if (findRuns(S).length) return null;
+      return S;
+    }
+
+    return { create, move, findMoves, findRuns, shuffle, rush, dump, restore, adjacent };
+  })();
+  // </motor>
+
+  // <niveles> goal: score (puntos), jelly (quitar gelatina) o collect (recoger: color 0-5, s rayados, w envueltos, b bombas).
+  // Movimientos, colores y estrellas ajustados con partidas simuladas.
+  const PATTERNS = {
+    band:    ["........", "........", "........", "11111111", "11111111", "........", "........", "........"],
+    bottom2: ["........", "........", "........", "........", "........", "........", "11111111", "11111111"],
+    cross:   ["...11...", "...11...", "...11...", "11122111", "11122111", "...11...", "...11...", "...11..."],
+    core:    ["........", ".111111.", ".111111.", ".111111.", ".111111.", ".111111.", ".111111.", "........"],
+    bottom:  ["........", "........", "........", "........", "........", "11111111", "11111111", "11111111"],
+    checker: ["1.1.1.1.", ".1.1.1.1", "1.1.1.1.", ".1.1.1.1", "1.1.1.1.", ".1.1.1.1", "1.1.1.1.", ".1.1.1.1"],
+    ring:    ["11111111", "1......1", "1......1", "1......1", "1......1", "1......1", "1......1", "11111111"],
+    full2:   ["22222222", "22222222", "22222222", "22222222", "22222222", "22222222", "22222222", "22222222"]
+  };
+  const jellyOf = rows => (rows ? rows.join("").split("").map(ch => (ch === "2" ? 2 : ch === "1" ? 1 : 0)) : null);
+  const LEVELS = [
+    { moves: 15, colors: 5, goal: { type: "score", target: 2500 }, stars: [2500, 6500, 11000] },
+    { moves: 18, colors: 5, goal: { type: "collect", items: { 0: 20, 4: 20 } }, stars: [5500, 10500, 16000] },
+    { moves: 24, colors: 5, goal: { type: "jelly" }, jelly: PATTERNS.band, stars: [7500, 16500, 24000] },
+    { moves: 20, colors: 5, goal: { type: "score", target: 6000 }, stars: [6000, 9500, 17500] },
+    { moves: 20, colors: 5, goal: { type: "collect", items: { 1: 20, s: 3 } }, stars: [5500, 12000, 20000] },
+    { moves: 26, colors: 5, goal: { type: "jelly" }, jelly: PATTERNS.bottom2, stars: [8500, 17000, 28000] },
+    { moves: 22, colors: 6, goal: { type: "score", target: 5500 }, stars: [5500, 7500, 9500] },
+    { moves: 25, colors: 6, goal: { type: "collect", items: { 2: 25, 3: 25, 5: 25 } }, stars: [5500, 8500, 11000] },
+    { moves: 25, colors: 5, goal: { type: "jelly" }, jelly: PATTERNS.cross, stars: [11500, 20500, 30500] },
+    { moves: 25, colors: 5, goal: { type: "collect", items: { s: 3, w: 2 } }, stars: [8000, 14500, 21500] },
+    { moves: 28, colors: 6, goal: { type: "jelly" }, jelly: PATTERNS.core, stars: [9000, 12500, 15500] },
+    { moves: 25, colors: 6, goal: { type: "score", target: 7500 }, stars: [7500, 9500, 12000] },
+    { moves: 25, colors: 5, goal: { type: "collect", items: { 0: 30, b: 1 } }, stars: [9500, 16500, 24500] },
+    { moves: 30, colors: 5, goal: { type: "jelly" }, jelly: PATTERNS.bottom, stars: [10000, 19000, 26500] },
+    { moves: 28, colors: 6, goal: { type: "score", target: 9000 }, stars: [9000, 11000, 14000] },
+    { moves: 32, colors: 5, goal: { type: "jelly" }, jelly: PATTERNS.checker, stars: [13500, 24000, 36500] },
+    { moves: 30, colors: 6, goal: { type: "collect", items: { 0: 35, 1: 35, 2: 35, 3: 35 } }, stars: [8000, 11000, 14000] },
+    { moves: 30, colors: 5, goal: { type: "jelly" }, jelly: PATTERNS.ring, stars: [16500, 25500, 35000] },
+    { moves: 30, colors: 5, goal: { type: "collect", items: { s: 5, w: 3, b: 1 } }, stars: [15000, 22500, 31500] },
+    { moves: 42, colors: 5, goal: { type: "jelly" }, jelly: PATTERNS.full2, stars: [31500, 43500, 60000] }
+  ];
+  // </niveles>
+
+  // <interfaz>
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+  };
+
+  const NB = " ";
+  const I18N = {
+    es: {
+      doc: "Dulces: junta tres iguales", title: "Dulces", tagline: "Junta tres o más iguales", menu: "Volver al menú",
+      level: "Nivel", moves: "Movimientos", goal: "Objetivo", score: "Puntos",
+      hint: "Pista", restart: "Reiniciar", levels: "Niveles", sound: "Sonido", lang: "Idioma", board: "Tablero de dulces",
+      help: "Desliza un dulce hacia una casilla vecina, o toca dos dulces seguidos, para cambiarlos de sitio. Si se juntan 3 o más iguales en línea, desaparecen.",
+      specials: "4 en línea crean un dulce rayado, una L o una T crean uno envuelto y 5 en línea, una bomba de color. Cambia dos especiales entre sí para hacer un combo.",
+      kbd: "Con teclado: flechas para moverte, Intro para elegir un dulce y una flecha para cambiarlo. H muestra una pista.",
+      goalScore: n => `Consigue ${n} puntos`, goalJelly: "Quita toda la gelatina", goalCollect: "Recoge estos dulces",
+      names: ["corazón rojo", "rombo naranja", "estrella amarilla", "cuadrado verde", "bola azul", "triángulo morado"],
+      plural: ["corazones rojos", "rombos naranjas", "estrellas amarillas", "cuadrados verdes", "bolas azules", "triángulos morados"],
+      items: { s: "dulces rayados", w: "dulces envueltos", b: "bombas de color" },
+      sH: ", rayado horizontal", sV: ", rayado vertical", sW: ", envuelto", bomb: "bomba de color",
+      jelly: "gelatinas", left: (n, what) => `faltan ${n} ${what}`, ptsLeft: n => `faltan ${n} puntos`, goalDone: "objetivo cumplido",
+      levelN: n => `Nivel ${n}`, movesN: n => (n === 1 ? "1 movimiento" : `${n} movimientos`),
+      introMoves: n => `Tienes ${n === 1 ? "1 movimiento" : `${n} movimientos`}.`,
+      play: "¡A jugar!", next: "Siguiente nivel", replay: "Repetir", retry: "Reintentar", close: "Cerrar",
+      winTitle: "¡Nivel superado!", loseTitle: "¡Sin movimientos!", allDone: "¡Has superado todos los niveles!",
+      missScore: n => `Te faltaron ${n} puntos.`,
+      missJelly: n => (n === 1 ? "Quedó 1 gelatina por quitar." : `Quedaron ${n} gelatinas por quitar.`),
+      missCollect: n => (n === 1 ? "Te faltó 1 dulce por recoger." : `Te faltaron ${n} dulces por recoger.`),
+      scored: n => `${n} puntos`, best: n => `Récord: ${n}`, newBest: "¡Nuevo récord!",
+      starsOf: (a, b) => `${a} de ${b} estrellas`, totalStars: (a, b) => `Estrellas: ${a} de ${b}`, locked: "bloqueado",
+      words: ["¡Dulce!", "¡Sabroso!", "¡Delicioso!", "¡Divino!"], rush: "¡Lluvia de azúcar!", shuffle: "¡A mezclar!",
+      nope: "Ese cambio no forma ninguna línea.", noMoves: "No quedan jugadas: se mezcla el tablero.",
+      moved: (p, m) => `+${p} puntos. ${m === 1 ? "Queda 1 movimiento" : `Quedan ${m} movimientos`}.`,
+      cell: (r, c, name) => `Fila ${r}, columna ${c}: ${name}`, onJelly: ", sobre gelatina", selected: ", elegido",
+      hintSay: (r1, c1, r2, c2) => `Pista: cambia fila ${r1}, columna ${c1} con fila ${r2}, columna ${c2}.`
+    },
+    en: {
+      doc: "Sweets: match three", title: "Sweets", tagline: "Match three or more", menu: "Back to menu",
+      level: "Level", moves: "Moves", goal: "Goal", score: "Score",
+      hint: "Hint", restart: "Restart", levels: "Levels", sound: "Sound", lang: "Language", board: "Candy board",
+      help: "Slide a candy onto a neighboring square, or tap two candies one after the other, to swap them. Line up 3 or more of the same and they disappear.",
+      specials: "4 in a line make a striped candy, an L or T shape makes a wrapped one, and 5 in a line make a color bomb. Swap two specials together for a combo.",
+      kbd: "Keyboard: arrows to move, Enter to pick a candy, then an arrow to swap it. H shows a hint.",
+      goalScore: n => `Score ${n} points`, goalJelly: "Clear all the jelly", goalCollect: "Collect these candies",
+      names: ["red heart", "orange diamond", "yellow star", "green square", "blue ball", "purple triangle"],
+      plural: ["red hearts", "orange diamonds", "yellow stars", "green squares", "blue balls", "purple triangles"],
+      items: { s: "striped candies", w: "wrapped candies", b: "color bombs" },
+      sH: ", horizontal stripes", sV: ", vertical stripes", sW: ", wrapped", bomb: "color bomb",
+      jelly: "jellies", left: (n, what) => `${n} ${what} to go`, ptsLeft: n => `${n} points to go`, goalDone: "goal complete",
+      levelN: n => `Level ${n}`, movesN: n => (n === 1 ? "1 move" : `${n} moves`),
+      introMoves: n => `You have ${n === 1 ? "1 move" : `${n} moves`}.`,
+      play: "Let’s play!", next: "Next level", replay: "Play again", retry: "Try again", close: "Close",
+      winTitle: "Level complete!", loseTitle: "Out of moves!", allDone: "You beat every level!",
+      missScore: n => `You were ${n} points short.`,
+      missJelly: n => (n === 1 ? "1 jelly was left." : `${n} jellies were left.`),
+      missCollect: n => (n === 1 ? "You were 1 candy short." : `You were ${n} candies short.`),
+      scored: n => `${n} points`, best: n => `Best: ${n}`, newBest: "New best!",
+      starsOf: (a, b) => `${a} of ${b} stars`, totalStars: (a, b) => `Stars: ${a} of ${b}`, locked: "locked",
+      words: ["Sweet!", "Tasty!", "Delicious!", "Divine!"], rush: "Sugar rush!", shuffle: "Shuffle!",
+      nope: "That swap doesn’t make a line.", noMoves: "No moves left: shuffling the board.",
+      moved: (p, m) => `+${p} points. ${m === 1 ? "1 move left" : `${m} moves left`}.`,
+      cell: (r, c, name) => `Row ${r}, column ${c}: ${name}`, onJelly: ", on jelly", selected: ", selected",
+      hintSay: (r1, c1, r2, c2) => `Hint: swap row ${r1}, column ${c1} with row ${r2}, column ${c2}.`
+    },
+    fr: {
+      doc: `Bonbons${NB}: aligne-en trois`, title: "Bonbons", tagline: "Aligne-en trois ou plus", menu: "Retour au menu",
+      level: "Niveau", moves: "Coups", goal: "Objectif", score: "Points",
+      hint: "Indice", restart: "Rejouer", levels: "Niveaux", sound: "Son", lang: "Langue", board: "Plateau de bonbons",
+      help: "Fais glisser un bonbon vers une case voisine, ou touche deux bonbons l’un après l’autre, pour les échanger. Aligne-en 3 ou plus pareils et ils disparaissent.",
+      specials: "4 alignés donnent un bonbon rayé, un L ou un T un bonbon emballé, et 5 alignés une bombe de couleur. Échange deux spéciaux entre eux pour un combo.",
+      kbd: `Au clavier${NB}: flèches pour te déplacer, Entrée pour choisir un bonbon, puis une flèche pour l’échanger. H affiche un indice.`,
+      goalScore: n => `Marque ${n} points`, goalJelly: "Enlève toute la gelée", goalCollect: "Ramasse ces bonbons",
+      names: ["cœur rouge", "losange orange", "étoile jaune", "carré vert", "boule bleue", "triangle violet"],
+      plural: ["cœurs rouges", "losanges orange", "étoiles jaunes", "carrés verts", "boules bleues", "triangles violets"],
+      items: { s: "bonbons rayés", w: "bonbons emballés", b: "bombes de couleur" },
+      sH: ", rayé horizontal", sV: ", rayé vertical", sW: ", emballé", bomb: "bombe de couleur",
+      jelly: "gelées", left: (n, what) => `encore ${n} ${what}`, ptsLeft: n => `encore ${n} points`, goalDone: "objectif atteint",
+      levelN: n => `Niveau ${n}`, movesN: n => (n === 1 ? "1 coup" : `${n} coups`),
+      introMoves: n => `Tu as ${n === 1 ? "1 coup" : `${n} coups`}.`,
+      play: `C’est parti${NB}!`, next: "Niveau suivant", replay: "Rejouer", retry: "Réessayer", close: "Fermer",
+      winTitle: `Niveau réussi${NB}!`, loseTitle: `Plus de coups${NB}!`, allDone: `Tu as réussi tous les niveaux${NB}!`,
+      missScore: n => `Il te manquait ${n} points.`,
+      missJelly: n => (n === 1 ? "Il restait 1 gelée." : `Il restait ${n} gelées.`),
+      missCollect: n => (n === 1 ? "Il te manquait 1 bonbon." : `Il te manquait ${n} bonbons.`),
+      scored: n => `${n} points`, best: n => `Record${NB}: ${n}`, newBest: `Nouveau record${NB}!`,
+      starsOf: (a, b) => `${a} étoiles sur ${b}`, totalStars: (a, b) => `Étoiles${NB}: ${a} sur ${b}`, locked: "verrouillé",
+      words: [`Sucré${NB}!`, `Savoureux${NB}!`, `Délicieux${NB}!`, `Divin${NB}!`], rush: `Pluie de sucre${NB}!`, shuffle: `On mélange${NB}!`,
+      nope: "Cet échange ne forme aucune ligne.", noMoves: `Plus aucun coup possible${NB}: on mélange le plateau.`,
+      moved: (p, m) => `+${p} points. ${m === 1 ? "Il reste 1 coup" : `Il reste ${m} coups`}.`,
+      cell: (r, c, name) => `Ligne ${r}, colonne ${c}${NB}: ${name}`, onJelly: ", sur de la gelée", selected: ", choisi",
+      hintSay: (r1, c1, r2, c2) => `Indice${NB}: échange ligne ${r1}, colonne ${c1} avec ligne ${r2}, colonne ${c2}.`
+    }
+  };
+  const pickLang = () => {
+    const saved = store.get("dulces:idioma", null);
+    if (I18N[saved]) return saved;
+    for (const l of navigator.languages || [navigator.language || ""]) {
+      const b = String(l).slice(0, 2).toLowerCase();
+      if (I18N[b]) return b;
+    }
+    return "es";
+  };
+  let lang = pickLang();
+  const T = k => I18N[lang][k];
+  const fmtN = n => Number(n).toLocaleString(lang);
+
+  const $ = id => document.getElementById(id);
+  const boardEl = $("board"), tilesEl = $("tiles"), piecesEl = $("pieces"), fxEl = $("fx"), cursorEl = $("cursor"), toastEl = $("toast");
+  const reduceMotion = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+  const SPEED = reduceMotion ? 0.6 : 1;
+  const sleep = ms => new Promise(res => setTimeout(res, ms));
+  const wait = ms => sleep(ms * SPEED);
+  const BASE = ["#ff4d5e", "#ff9a1f", "#ffd23b", "#3ccf6a", "#3a9cff", "#b25ff0"];
+  const N = 8;
+  const rOf = i => Math.floor(i / N), cOf = i => i % N;
+
+  let L = 0, S = null, G = null;
+  let busy = false, sel = -1, cursor = 27, drag = null, hintTimer = 0, hintIds = [], modalBuilder = null, lastFocus = null;
+  const els = new Map();
+
+  const prog = store.get("dulces:progreso", null) || {};
+  if (!prog.stars || typeof prog.stars !== "object") prog.stars = {};
+  if (!prog.best || typeof prog.best !== "object") prog.best = {};
+  const unlocked = () => { let u = 0; while (u < LEVELS.length - 1 && prog.stars[u] > 0) u++; return u; };
+  const totalStars = () => LEVELS.reduce((s, _, i) => s + (prog.stars[i] || 0), 0);
+
+  function candySVG(d) {
+    if (d.k === "b") return '<svg viewBox="0 0 100 100" aria-hidden="true"><use href="#bomb"/></svg>';
+    if (d.k === "w") return `<svg viewBox="0 0 100 100" aria-hidden="true" style="color:${BASE[d.c]}"><use href="#wrap"/><g transform="translate(21 21) scale(.58)"><use href="#c${d.c}"/></g></svg>`;
+    const stripes = d.k === "h" || d.k === "v" ? `<g clip-path="url(#k${d.c})"><use href="#st${d.k}"/></g>` : "";
+    return `<svg viewBox="0 0 100 100" aria-hidden="true"><use href="#c${d.c}"/>${stripes}</svg>`;
+  }
+  const itemSVG = k => candySVG(k === "s" ? { c: 4, k: "h" } : k === "w" ? { c: 5, k: "w" } : k === "b" ? { c: -1, k: "b" } : { c: +k, k: "n" });
+  const itemName = k => (k === "s" || k === "w" || k === "b" ? T("items")[k] : T("plural")[+k]);
+  const candyName = d => (d.k === "b" ? T("bomb") : T("names")[d.c] + (d.k === "h" ? T("sH") : d.k === "v" ? T("sV") : d.k === "w" ? T("sW") : ""));
+
+  // Objetivo y estrellas
+  const goal = () => LEVELS[L].goal;
+  function goalLeft() {
+    const g = goal();
+    if (g.type === "score") return Math.max(0, g.target - G.score);
+    if (g.type === "jelly") return G.jelly.filter(x => x > 0).length;
+    return Object.keys(g.items).reduce((s, k) => s + Math.max(0, g.items[k] - (G.got[k] || 0)), 0);
+  }
+  const starsFor = score => LEVELS[L].stars.filter(t => score >= t).length;
+  function goalHTML() {
+    const g = goal();
+    if (g.type === "score") {
+      const left = goalLeft();
+      return `<span class="goal-text${left ? "" : " done"}">${T("goalScore")(fmtN(g.target))}<span class="sr">, ${left ? T("ptsLeft")(fmtN(left)) : T("goalDone")}</span></span>`;
+    }
+    const items = g.type === "jelly"
+      ? [["j", G.jelly.filter(x => x > 0).length, T("jelly")]]
+      : Object.keys(g.items).map(k => [k, Math.max(0, g.items[k] - (G.got[k] || 0)), itemName(k)]);
+    return items.map(([k, n, name]) => {
+      const icon = k === "j" ? '<svg viewBox="0 0 100 100" aria-hidden="true"><use href="#jel"/></svg>' : itemSVG(k);
+      const say = n ? T("left")(n, name) : `${name}: ${T("goalDone")}`;
+      return `<span class="gi${n ? "" : " done"}">${icon}<span class="n" aria-hidden="true">${n}</span><svg class="ok" viewBox="0 0 24 24" aria-hidden="true"><use href="#ok"/></svg><span class="sr">${say}</span></span>`;
+    }).join("");
+  }
+
+  function buildMeter() {
+    const m = $("meter");
+    m.querySelectorAll(".mk").forEach(e => e.remove());
+    const st = LEVELS[L].stars, max = st[2] * 1.06;
+    st.forEach((t, k) => {
+      const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      s.setAttribute("viewBox", "0 0 24 24");
+      s.setAttribute("class", "mk");
+      s.setAttribute("data-k", k);
+      s.innerHTML = '<use href="#star"/>';
+      s.style.left = (t / max * 100) + "%";
+      m.append(s);
+    });
+  }
+  function renderMeter(quiet) {
+    const st = LEVELS[L].stars, max = st[2] * 1.06;
+    $("fill").style.width = Math.min(100, G.score / max * 100) + "%";
+    $("meter").querySelectorAll(".mk").forEach(s => {
+      const k = +s.getAttribute("data-k"), on = G.score >= st[k];
+      if (on && !s.classList.contains("on")) { s.classList.add("on"); if (!quiet) sfx("star", k); }
+      else if (!on) s.classList.remove("on");
+    });
+  }
+  function renderHUD(bump, quiet) {
+    $("levelNum").textContent = L + 1;
+    const mv = $("movesBox");
+    $("moves").textContent = G.moves;
+    mv.classList.toggle("low", G.moves <= 5 && !G.over);
+    if (bump) { mv.classList.remove("bump"); void mv.offsetWidth; mv.classList.add("bump"); }
+    $("score").textContent = fmtN(G.score);
+    $("goal").innerHTML = goalHTML();
+    renderMeter(quiet);
+  }
+
+  // Tablero
+  function buildBoard() {
+    tilesEl.innerHTML = ""; piecesEl.innerHTML = ""; fxEl.innerHTML = ""; els.clear();
+    for (let i = 0; i < N * N; i++) {
+      const t = document.createElement("div");
+      t.className = "tile" + ((rOf(i) + cOf(i)) % 2 ? " alt" : "");
+      tilesEl.append(t);
+    }
+    paintJelly();
+    S.cells.forEach((d, i) => makePiece(d, i));
+    renderCursor();
+  }
+  function paintJelly() {
+    const tiles = tilesEl.children;
+    for (let i = 0; i < tiles.length; i++) {
+      tiles[i].classList.toggle("j1", G.jelly[i] === 1);
+      tiles[i].classList.toggle("j2", G.jelly[i] >= 2);
+    }
+  }
+  const setPos = (el, r, c) => { el.style.setProperty("--r", r); el.style.setProperty("--c", c); };
+  function makePiece(d, i, row) {
+    const el = document.createElement("div");
+    el.className = "pc";
+    el.innerHTML = candySVG(d);
+    setPos(el, row == null ? rOf(i) : row, cOf(i));
+    piecesEl.append(el);
+    els.set(d.id, el);
+    return el;
+  }
+  const pieceAt = i => { const d = S && S.cells[i]; return d ? els.get(d.id) : null; };
+  const renderCursor = () => setPos(cursorEl, rOf(cursor), cOf(cursor));
+
+  // Sonido
+  let soundOn = store.get("dulces:sonido", true) !== false, ac = null;
+  function audio() {
+    if (!soundOn) return null;
+    try {
+      if (!ac) { const A = window.AudioContext || window.webkitAudioContext; if (!A) return null; ac = new A(); }
+      if (ac.state === "suspended") ac.resume();
+    } catch (e) { ac = null; }
+    return ac;
+  }
+  function tone(f, dur, o) {
+    o = o || {};
+    const a = audio();
+    if (!a) return;
+    try {
+      const t0 = a.currentTime + (o.at || 0), osc = a.createOscillator(), g = a.createGain();
+      osc.type = o.type || "sine";
+      osc.frequency.setValueAtTime(f, t0);
+      if (o.to) osc.frequency.exponentialRampToValueAtTime(o.to, t0 + dur);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(o.vol || 0.06, t0 + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(g); g.connect(a.destination);
+      osc.start(t0); osc.stop(t0 + dur + 0.03);
+    } catch (e) {}
+  }
+  function sfx(name, n) {
+    if (!soundOn) return;
+    if (name === "swap") tone(620, 0.07, { type: "triangle", vol: 0.04 });
+    else if (name === "nope") { tone(240, 0.11, { type: "square", vol: 0.025 }); tone(185, 0.13, { type: "square", vol: 0.025, at: 0.1 }); }
+    else if (name === "match") { const f = 523.25 * Math.pow(2, Math.min((n || 1) - 1, 9) * 2 / 12); tone(f, 0.14, { type: "triangle", vol: 0.07 }); tone(f * 1.5, 0.12, { vol: 0.035, at: 0.04 }); }
+    else if (name === "special") [784, 988, 1319].forEach((f, k) => tone(f, 0.15, { type: "triangle", vol: 0.045, at: k * 0.06 }));
+    else if (name === "line") tone(1500, 0.3, { type: "sawtooth", vol: 0.022, to: 260 });
+    else if (name === "blast") tone(170, 0.34, { type: "square", vol: 0.045, to: 45 });
+    else if (name === "color") { tone(280, 0.55, { vol: 0.07, to: 1700 }); tone(560, 0.5, { type: "triangle", vol: 0.03, to: 2400, at: 0.05 }); }
+    else if (name === "shuffle") tone(380, 0.32, { type: "triangle", vol: 0.04, to: 900 });
+    else if (name === "star") tone(880 * Math.pow(2, (n || 0) * 4 / 12), 0.22, { type: "triangle", vol: 0.06 });
+    else if (name === "win") [523, 659, 784, 1047, 1319].forEach((f, k) => tone(f, 0.24, { type: "triangle", vol: 0.065, at: k * 0.11 }));
+    else if (name === "lose") [392, 330, 262].forEach((f, k) => tone(f, 0.3, { type: "triangle", vol: 0.055, at: k * 0.17 }));
+  }
+  const buzz = ms => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} };
+
+  function toast(text) {
+    toastEl.textContent = text;
+    toastEl.classList.remove("on"); void toastEl.offsetWidth; toastEl.classList.add("on");
+  }
+  let liveTimer = 0;
+  function announce(msg) {
+    const el = $("live");
+    clearTimeout(liveTimer);
+    el.textContent = "";
+    liveTimer = setTimeout(() => { el.textContent = msg; }, 60);
+  }
+
+  // Ventanas
+  const modalOpen = () => $("modal").classList.contains("on");
+  function openModal(builder) {
+    modalBuilder = builder;
+    const m = builder();
+    $("mTitle").textContent = m.title;
+    $("mText").textContent = m.text || "";
+    $("mBody").innerHTML = m.body || "";
+    const box = $("mActions");
+    box.innerHTML = "";
+    m.actions.forEach(a => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "big" + (a.primary ? " primary" : "");
+      b.textContent = a.label;
+      b.onclick = a.fn;
+      box.append(b);
+    });
+    if (m.after) m.after();
+    const modal = $("modal");
+    if (!modal.classList.contains("on")) { lastFocus = document.activeElement; modal.classList.add("on"); }
+    modal.dataset.closable = m.closable ? "1" : "";
+    const focus = $("mBody").querySelector(".lv.cur:not(:disabled)") || box.querySelector(".primary") || box.querySelector("button");
+    if (focus) focus.focus();
+    stopHint();
+  }
+  function closeModal() {
+    $("modal").classList.remove("on");
+    modalBuilder = null;
+    if (lastFocus && lastFocus !== document.body && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true });
+    if (G && !G.over) scheduleHint();
+  }
+  const starRow = n => `<div class="bigstars" role="img" aria-label="${T("starsOf")(n, 3)}">${[0, 1, 2].map(k => `<svg viewBox="0 0 24 24" class="${k < n ? "on" : ""}" aria-hidden="true"><use href="#star"/></svg>`).join("")}</div>`;
+
+  const introModal = () => {
+    const g = goal();
+    const what = g.type === "score" ? T("goalScore")(fmtN(g.target)) : g.type === "jelly" ? T("goalJelly") : T("goalCollect");
+    return {
+      title: T("levelN")(L + 1),
+      text: `${what}. ${T("introMoves")(LEVELS[L].moves)}`,
+      body: g.type === "score" ? "" : `<div class="mgoal">${goalHTML()}</div>`,
+      actions: [{ label: T("play"), primary: true, fn: closeModal }, { label: T("levels"), fn: () => openModal(mapModal) }]
+    };
+  };
+  const winModal = (stars, score, isBest, prevBest) => () => {
+    const last = L >= LEVELS.length - 1, actions = [];
+    if (!last) actions.push({ label: T("next"), primary: true, fn: () => { closeModal(); startLevel(L + 1); openModal(introModal); } });
+    actions.push({ label: T("replay"), primary: last, fn: () => { closeModal(); startLevel(L); openModal(introModal); } });
+    actions.push({ label: T("levels"), fn: () => openModal(mapModal) });
+    return {
+      title: last ? T("allDone") : T("winTitle"),
+      text: T("scored")(fmtN(score)),
+      body: starRow(stars) + `<div class="record">${isBest ? T("newBest") : prevBest ? T("best")(fmtN(prevBest)) : ""}</div>`,
+      actions
+    };
+  };
+  const loseModal = () => {
+    const g = goal(), left = goalLeft();
+    const text = g.type === "score" ? T("missScore")(fmtN(left)) : g.type === "jelly" ? T("missJelly")(left) : T("missCollect")(left);
+    return {
+      title: T("loseTitle"), text,
+      actions: [
+        { label: T("retry"), primary: true, fn: () => { closeModal(); startLevel(L); scheduleHint(); } },
+        { label: T("levels"), fn: () => openModal(mapModal) }
+      ]
+    };
+  };
+  const mapModal = () => {
+    const u = unlocked(), playing = !!(G && !G.over);
+    const btns = LEVELS.map((_, i) => {
+      const s = prog.stars[i] || 0, locked = i > u;
+      const label = `${T("levelN")(i + 1)}, ${locked ? T("locked") : T("starsOf")(s, 3)}`;
+      const stars = [0, 1, 2].map(k => `<svg viewBox="0 0 24 24" class="${k < s ? "on" : ""}"><use href="#star"/></svg>`).join("");
+      const inner = locked
+        ? '<svg class="lock" viewBox="0 0 24 24" aria-hidden="true"><use href="#lock"/></svg>'
+        : `<span aria-hidden="true">${i + 1}</span><span class="st" aria-hidden="true">${stars}</span>`;
+      return `<button type="button" class="lv${i === L ? " cur" : ""}" data-lv="${i}" aria-label="${label}"${locked ? " disabled" : ""}>${inner}</button>`;
+    }).join("");
+    return {
+      title: T("levels"),
+      text: T("totalStars")(totalStars(), LEVELS.length * 3),
+      body: `<div class="levels">${btns}</div>`,
+      closable: playing,
+      actions: playing ? [{ label: T("close"), fn: closeModal }] : [],
+      after: () => $("mBody").querySelectorAll("[data-lv]").forEach(b => {
+        b.onclick = () => { closeModal(); startLevel(+b.dataset.lv); openModal(introModal); };
+      })
+    };
+  };
+
+  // Animaciones: reproducen los pasos que devuelve el motor.
+  let cheerLevel = -1;
+  async function play(steps) {
+    for (const st of steps) {
+      if (st.type === "swap" || st.type === "swapBack") await animSwap(st);
+      else if (st.type === "clear") await animClear(st);
+      else if (st.type === "fall") await animFall(st);
+      else if (st.type === "transform") await animTransform(st);
+      else if (st.type === "shuffle") await animShuffle(st);
+      else if (st.type === "rebuild") { buildBoard(); await wait(250); }
+    }
+  }
+  async function animSwap(st) {
+    const back = st.type === "swapBack", to = back ? [st.a, st.b] : [st.b, st.a];
+    st.ids.forEach((id, k) => {
+      const el = els.get(id);
+      if (!el) return;
+      el.style.transition = `transform ${Math.round(170 * SPEED)}ms ease`;
+      setPos(el, rOf(to[k]), cOf(to[k]));
+    });
+    if (!back) sfx("swap");
+    await wait(185);
+  }
+  function showFx(f) {
+    const el = document.createElement("div");
+    if (f.t === "row" || f.t === "col") el.className = "beam " + f.t;
+    else { el.className = "ring"; el.style.setProperty("--d", f.t === "blast" ? f.rad * 2 + 1.6 : f.t === "all" ? 18 : 7); }
+    setPos(el, f.r, f.c);
+    fxEl.append(el);
+    setTimeout(() => el.remove(), 650);
+  }
+  function showPoints(st) {
+    if (!st.points || !st.cleared.length) return;
+    let r = 0, c = 0;
+    st.cleared.forEach(d => { r += rOf(d.i); c += cOf(d.i); });
+    const el = document.createElement("div");
+    el.className = "pts";
+    el.textContent = "+" + fmtN(st.points);
+    el.style.setProperty("--y", (r / st.cleared.length).toFixed(2));
+    el.style.setProperty("--x", (c / st.cleared.length).toFixed(2));
+    const col = st.cleared.find(d => d.c >= 0);
+    el.style.setProperty("--glow", col ? BASE[col.c] : "#ff5fa2");
+    fxEl.append(el);
+    setTimeout(() => el.remove(), 900);
+  }
+  async function animClear(st) {
+    if (st.fx.length) {
+      st.fx.forEach(showFx);
+      const t = st.fx.map(f => f.t), big = t.includes("all") || t.includes("color");
+      sfx(big ? "color" : t.includes("blast") ? "blast" : "line");
+      if (big) buzz(30);
+      await wait(130);
+    }
+    for (const d of st.cleared) {
+      const el = els.get(d.id);
+      if (!el) continue;
+      els.delete(d.id);
+      el.classList.remove("sel", "hint", "armed");
+      el.classList.add("pop");
+      setTimeout(() => el.remove(), 300 * SPEED + 30);
+    }
+    for (const s of st.stay) { const el = els.get(s.id); if (el) el.classList.add("armed"); }
+    const tiles = tilesEl.children;
+    for (const j of st.jelly) {
+      G.jelly[j.i] = j.left;
+      const t = tiles[j.i];
+      t.classList.remove("splash"); void t.offsetWidth; t.classList.add("splash");
+    }
+    paintJelly();
+    for (const x of st.created) makePiece(x.candy, x.i).classList.add("born");
+    if (st.created.length) { sfx("special"); buzz(12); }
+    else if (!st.fx.length) sfx("match", st.cascade);
+    G.score += st.points;
+    for (const k in st.counts) G.got[k] = (G.got[k] || 0) + st.counts[k];
+    showPoints(st);
+    const w = Math.min(st.cascade - 2, 3);
+    if (w > cheerLevel) { cheerLevel = w; toast(T("words")[w]); }
+    renderHUD();
+    await wait(250);
+  }
+  async function animFall(st) {
+    const ease = reduceMotion ? "ease-in" : "cubic-bezier(.32,.05,.6,1.16)";
+    const dur = dist => Math.round((140 + dist * 42) * SPEED);
+    let longest = 0;
+    for (const m of st.moves) {
+      const el = els.get(m.id);
+      if (!el) continue;
+      const ms = dur(m.dist);
+      el.style.transition = `transform ${ms}ms ${ease}`;
+      setPos(el, rOf(m.to), cOf(m.to));
+      longest = Math.max(longest, ms);
+    }
+    const fresh = st.spawns.map(s => { const el = makePiece(s.candy, s.to, s.from); el.style.transition = "none"; return [el, s]; });
+    if (fresh.length) {
+      void piecesEl.offsetWidth;
+      for (const [el, s] of fresh) {
+        const ms = dur(s.dist);
+        el.style.transition = `transform ${ms}ms ${ease}`;
+        setPos(el, rOf(s.to), cOf(s.to));
+        longest = Math.max(longest, ms);
+      }
+    }
+    if (longest) await sleep(longest + 10);
+  }
+  async function animTransform(st) {
+    for (const x of st.list) {
+      const el = els.get(x.id);
+      if (!el) continue;
+      el.innerHTML = candySVG(x);
+      el.classList.remove("born"); void el.offsetWidth; el.classList.add("born");
+      if (st.rush) { G.moves = Math.max(0, G.moves - 1); renderHUD(); sfx("swap"); await wait(70); }
+    }
+    if (!st.rush) sfx("special");
+    await wait(280);
+  }
+  async function animShuffle(st) {
+    sfx("shuffle");
+    for (const m of st.moves) {
+      const el = els.get(m.id);
+      if (!el) continue;
+      el.style.transition = `transform ${Math.round(480 * SPEED)}ms cubic-bezier(.5,0,.3,1)`;
+      setPos(el, rOf(m.to), cOf(m.to));
+    }
+    await wait(500);
+  }
+
+  // Selección y pistas
+  function setSel(i) {
+    clearSel();
+    sel = i;
+    const el = pieceAt(i);
+    if (el) el.classList.add("sel");
+  }
+  function clearSel() {
+    if (sel >= 0) { const el = pieceAt(sel); if (el) el.classList.remove("sel"); }
+    sel = -1;
+  }
+  function stopHint() {
+    clearTimeout(hintTimer);
+    hintIds.forEach(id => { const el = els.get(id); if (el) el.classList.remove("hint"); });
+    hintIds = [];
+  }
+  function scheduleHint() {
+    clearTimeout(hintTimer);
+    hintTimer = setTimeout(() => showHint(false), 7000);
+  }
+  function showHint(say) {
+    if (busy || !G || G.over || modalOpen()) return;
+    stopHint();
+    const moves = Engine.findMoves(S);
+    if (!moves.length) return;
+    const [a, b] = moves[Math.floor(Math.random() * moves.length)];
+    hintIds = [S.cells[a].id, S.cells[b].id];
+    hintIds.forEach(id => { const el = els.get(id); if (el) el.classList.add("hint"); });
+    if (say) announce(T("hintSay")(rOf(a) + 1, cOf(a) + 1, rOf(b) + 1, cOf(b) + 1));
+  }
+
+  // Partida
+  async function doMove(a, b) {
+    if (busy || !G || G.over || modalOpen()) return;
+    busy = true;
+    stopHint();
+    clearSel();
+    cheerLevel = -1;
+    const before = G.score;
+    const res = Engine.move(S, a, b);
+    if (res.ok) { G.moves--; renderHUD(true); }
+    await play(res.steps);
+    if (!res.ok) { sfx("nope"); announce(T("nope")); }
+    else {
+      announce(T("moved")(fmtN(G.score - before), G.moves));
+      await afterMove();
+    }
+    busy = false;
+    if (G && !G.over && !modalOpen()) scheduleHint();
+  }
+  async function afterMove() {
+    if (goalLeft() === 0) return win();
+    if (G.moves <= 0) return lose();
+    if (!Engine.findMoves(S).length) {
+      toast(T("shuffle"));
+      announce(T("noMoves"));
+      await wait(650);
+      await play([Engine.shuffle(S)]);
+    }
+    save();
+  }
+  async function win() {
+    G.over = true;
+    store.del("dulces:partida");
+    renderHUD();
+    if (G.moves > 0) {
+      await wait(350);
+      toast(T("rush"));
+      await wait(700);
+      cheerLevel = 9;
+      await play(Engine.rush(S, G.moves));
+      G.moves = 0;
+      renderHUD();
+    }
+    await wait(450);
+    const stars = Math.max(1, starsFor(G.score)), prevBest = prog.best[L] || 0;
+    prog.stars[L] = Math.max(prog.stars[L] || 0, stars);
+    prog.best[L] = Math.max(prevBest, G.score);
+    store.set("dulces:progreso", prog);
+    sfx("win");
+    openModal(winModal(stars, G.score, prevBest > 0 && G.score > prevBest, prevBest));
+  }
+  async function lose() {
+    G.over = true;
+    store.del("dulces:partida");
+    renderHUD();
+    await wait(500);
+    sfx("lose");
+    openModal(loseModal);
+  }
+  function startLevel(li, resumed) {
+    L = Math.max(0, Math.min(LEVELS.length - 1, li));
+    const lv = LEVELS[L];
+    stopHint();
+    if (resumed) { S = resumed.S; G = resumed.G; }
+    else {
+      S = Engine.create({ n: lv.colors, jelly: jellyOf(lv.jelly) });
+      G = { moves: lv.moves, score: 0, got: {}, over: false };
+    }
+    G.jelly = S.jelly.slice();
+    sel = -1; busy = false; drag = null;
+    buildMeter();
+    buildBoard();
+    renderHUD(false, true);
+    save();
+  }
+  function save() {
+    if (!G || G.over) return;
+    store.set("dulces:partida", { v: 1, level: L, moves: G.moves, score: G.score, got: G.got, board: Engine.dump(S) });
+  }
+  function load() {
+    const s = store.get("dulces:partida", null);
+    if (!s || s.v !== 1 || !Number.isInteger(s.level) || !LEVELS[s.level] || s.level > unlocked()) return null;
+    const S2 = Engine.restore(s.board);
+    if (!S2 || S2.n !== LEVELS[s.level].colors || S2.R !== N || S2.C !== N) return null;
+    const moves = s.moves | 0;
+    if (moves < 1 || moves > LEVELS[s.level].moves) return null;
+    const got = {};
+    if (s.got && typeof s.got === "object") for (const k in s.got) got[k] = Math.max(0, s.got[k] | 0);
+    return { li: s.level, S: S2, G: { moves, score: Math.max(0, s.score | 0), got, over: false } };
+  }
+
+  // Entrada: deslizar, tocar dos dulces o teclado.
+  function cellFromPoint(x, y) {
+    const r = boardEl.getBoundingClientRect();
+    const c = Math.floor((x - r.left) / (r.width / N)), rr = Math.floor((y - r.top) / (r.height / N));
+    return c < 0 || c >= N || rr < 0 || rr >= N ? -1 : rr * N + c;
+  }
+  boardEl.addEventListener("pointerdown", e => {
+    boardEl.classList.remove("kbd");
+    if (e.button > 0) return;
+    audio();
+    if (busy || !G || G.over || modalOpen()) return;
+    const i = cellFromPoint(e.clientX, e.clientY);
+    if (i < 0) return;
+    drag = { i, x: e.clientX, y: e.clientY, id: e.pointerId, moved: false };
+    try { boardEl.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  boardEl.addEventListener("pointermove", e => {
+    if (!drag || drag.moved || e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    const size = boardEl.getBoundingClientRect().width / N;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < size * 0.32) return;
+    drag.moved = true;
+    const r = rOf(drag.i), c = cOf(drag.i);
+    let j;
+    if (Math.abs(dx) > Math.abs(dy)) j = dx > 0 ? (c < N - 1 ? drag.i + 1 : -1) : (c > 0 ? drag.i - 1 : -1);
+    else j = dy > 0 ? (r < N - 1 ? drag.i + N : -1) : (r > 0 ? drag.i - N : -1);
+    if (j >= 0) { cursor = j; renderCursor(); doMove(drag.i, j); }
+  });
+  const endDrag = e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const d = drag;
+    drag = null;
+    if (d.moved || e.type === "pointercancel" || busy) return;
+    cursor = d.i;
+    renderCursor();
+    if (sel >= 0 && sel !== d.i && Engine.adjacent(S, sel, d.i)) doMove(sel, d.i);
+    else if (sel === d.i) clearSel();
+    else setSel(d.i);
+  };
+  boardEl.addEventListener("pointerup", endDrag);
+  boardEl.addEventListener("pointercancel", endDrag);
+
+  const DIRS = { ArrowLeft: [0, -1], ArrowRight: [0, 1], ArrowUp: [-1, 0], ArrowDown: [1, 0] };
+  function announceCell(i) {
+    const d = S && S.cells[i];
+    if (!d) return;
+    announce(T("cell")(rOf(i) + 1, cOf(i) + 1, candyName(d)) + (G.jelly[i] ? T("onJelly") : "") + (sel === i ? T("selected") : ""));
+  }
+  boardEl.addEventListener("keydown", e => {
+    if (!G || modalOpen()) return;
+    const dir = DIRS[e.key];
+    if (dir || e.key === "Enter" || e.key === " " || e.key === "Escape") boardEl.classList.add("kbd");
+    if (dir) {
+      e.preventDefault();
+      const r = rOf(cursor) + dir[0], c = cOf(cursor) + dir[1];
+      if (r < 0 || r >= N || c < 0 || c >= N) return;
+      const j = r * N + c;
+      if (sel >= 0 && sel === cursor && !busy && !G.over) { const a = sel; cursor = j; renderCursor(); doMove(a, j); return; }
+      cursor = j;
+      renderCursor();
+      announceCell(j);
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      if (busy || G.over) return;
+      audio();
+      if (sel === cursor) clearSel(); else setSel(cursor);
+      announceCell(cursor);
+    } else if (e.key === "Escape") clearSel();
+    else if (e.key === "h" || e.key === "H") showHint(true);
+  });
+  boardEl.addEventListener("focus", () => {
+    let kb = false;
+    try { kb = boardEl.matches(":focus-visible"); } catch (err) {}
+    if (kb) { boardEl.classList.add("kbd"); announceCell(cursor); }
+  });
+
+  // Botones
+  $("hintBtn").onclick = () => showHint(true);
+  $("restartBtn").onclick = () => { if (busy || modalOpen()) return; startLevel(L); scheduleHint(); };
+  const openMap = () => { if (!busy) openModal(mapModal); };
+  $("mapBtn").onclick = openMap;
+  $("levelBtn").onclick = openMap;
+  const soundBtn = $("soundBtn");
+  const renderSound = () => soundBtn.setAttribute("aria-pressed", String(soundOn));
+  soundBtn.onclick = () => { soundOn = !soundOn; store.set("dulces:sonido", soundOn); renderSound(); if (soundOn) sfx("swap"); };
+
+  const modalEl = $("modal");
+  modalEl.addEventListener("keydown", e => {
+    if (e.key === "Escape" && modalEl.dataset.closable) { e.preventDefault(); closeModal(); return; }
+    if (e.key !== "Tab") return;
+    const f = [...modalEl.querySelectorAll("button:not(:disabled)")];
+    if (!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
+  modalEl.addEventListener("click", e => { if (e.target === modalEl && modalEl.dataset.closable) closeModal(); });
+
+  function applyLang() {
+    document.documentElement.lang = lang;
+    document.title = T("doc");
+    document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = T(el.dataset.i18n); });
+    document.querySelectorAll("[data-i18n-aria]").forEach(el => el.setAttribute("aria-label", T(el.dataset.i18nAria)));
+    document.querySelectorAll("[data-lang]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    if (G) renderHUD(false, true);
+    if (modalBuilder && modalOpen()) openModal(modalBuilder);
+  }
+  document.querySelectorAll("[data-lang]").forEach(b => {
+    b.onclick = () => { lang = b.dataset.lang; store.set("dulces:idioma", lang); applyLang(); };
+  });
+  document.addEventListener("visibilitychange", () => { if (document.hidden && !busy) save(); });
+
+  renderSound();
+  applyLang();
+  const resumed = load();
+  if (resumed) {
+    startLevel(resumed.li, resumed);
+    if (goalLeft() === 0) { startLevel(resumed.li); openModal(introModal); }
+    else scheduleHint();
+  } else {
+    startLevel(unlocked());
+    openModal(introModal);
+  }
+
+  // Para pruebas automáticas desde el navegador.
+  window.__dulces = { Engine, LEVELS, get state() { return { S, G, L, busy, els }; }, move: doMove };
+  // </interfaz>
+})();
+</script>
+</body>
+</html>
