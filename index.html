@@ -77,6 +77,10 @@ h1{margin:0;font-size:clamp(40px, 8vw, 56px);line-height:.95;font-weight:800;let
 }
 footer{margin-top:28px;color:var(--muted);font-size:14px;font-weight:600;line-height:1.35}
 footer code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+.langrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:18px;color:var(--ink);font-size:15px;font-weight:700}
+.seg{display:flex;gap:2px;padding:4px;border-radius:16px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--edge)}
+.seg button{border:0;background:none;padding:6px 12px;border-radius:12px;font:inherit;font-weight:700;color:inherit;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--play);color:var(--paper)}
 @media (prefers-reduced-motion: reduce){
   .card{transition:none}
 }
@@ -86,13 +90,21 @@ footer code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;fon
 <main class="shell">
   <header>
     <div class="mark" aria-hidden="true">🎲</div>
-    <h1>Juegos</h1>
-    <p class="lead">Elige uno y empieza a jugar. Cada juego vive en su propia carpeta.</p>
+    <h1 data-i18n="title">Juegos</h1>
+    <p class="lead" data-i18n="lead">Elige uno y empieza a jugar. Cada juego vive en su propia carpeta.</p>
     <p class="count" id="count"></p>
   </header>
   <div class="grid" id="games"></div>
-  <p class="empty" id="empty" hidden>Todavía no hay juegos en el menú.</p>
-  <footer>Para añadir un juego, crea su carpeta y registra una entrada en la lista <code>GAMES</code> de esta página.</footer>
+  <p class="empty" id="empty" data-i18n="empty" hidden>Todavía no hay juegos en el menú.</p>
+  <div class="langrow">
+    <span id="langLabel" data-i18n="lang">Idioma</span>
+    <div class="seg" role="group" aria-labelledby="langLabel">
+      <button type="button" data-lang="es" lang="es" aria-pressed="true">Español</button>
+      <button type="button" data-lang="en" lang="en" aria-pressed="false">English</button>
+      <button type="button" data-lang="fr" lang="fr" aria-pressed="false">Français</button>
+    </div>
+  </div>
+  <footer id="footer">Para añadir un juego, crea su carpeta y registra una entrada en la lista <code>GAMES</code> de esta página.</footer>
 </main>
 <script>
 /*
@@ -106,29 +118,81 @@ footer code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;fon
      - description:  una frase corta
      - folder:       nombre de la carpeta (sin barras)
      - emoji:        un emoji que sirva de icono
+     title y description pueden ser un texto o un objeto por idioma:
+       { es: "…", en: "…", fr: "…" }  (si falta un idioma se usa el español)
   3. La tarjeta enlaza a ./<folder>/  (en GitHub Pages, la URL del sitio + esa carpeta).
      Dentro del juego, un enlace a "../" vuelve a este menú.
 */
 const GAMES = [
   {
-    title: "Michis",
-    description: "Pon un gato en cada color: uno por fila y columna, sin que se toquen.",
+    title: { es: "Michis", en: "Kitties", fr: "Minous" },
+    description: {
+      es: "Pon un gato en cada color: uno por fila y columna, sin que se toquen.",
+      en: "Put a cat in each color: one per row and column, and they can’t touch.",
+      fr: "Place un chat dans chaque couleur : un par ligne et par colonne, sans qu’ils se touchent."
+    },
     folder: "michis",
     emoji: "🐱"
   },
   {
     title: "Sudoku",
-    description: "Completa la cuadrícula de 9×9 para que cada fila, columna y bloque tenga los números del 1 al 9.",
+    description: {
+      es: "Completa la cuadrícula de 9×9 para que cada fila, columna y bloque tenga los números del 1 al 9.",
+      en: "Fill the 9×9 grid so every row, column and box has the numbers 1 to 9.",
+      fr: "Remplis la grille de 9×9 pour que chaque ligne, colonne et carré contienne les chiffres de 1 à 9."
+    },
     folder: "sudoku",
     emoji: "🔢"
   },
   {
-    title: "Dulces",
-    description: "Junta tres o más dulces iguales, crea dulces especiales y supera 20 niveles.",
+    title: { es: "Dulces", en: "Sweets", fr: "Bonbons" },
+    description: {
+      es: "Junta tres o más dulces iguales, crea dulces especiales y supera 20 niveles.",
+      en: "Match three or more candies, make special candies and beat 20 levels.",
+      fr: "Aligne trois bonbons pareils ou plus, crée des bonbons spéciaux et réussis 20 niveaux."
+    },
     folder: "dulces",
     emoji: "🍬"
   }
 ];
+
+const I18N = {
+  es: {
+    doc: "Juegos", title: "Juegos", lead: "Elige uno y empieza a jugar. Cada juego vive en su propia carpeta.",
+    empty: "Todavía no hay juegos en el menú.", lang: "Idioma", play: "Jugar",
+    playAria: name => "Jugar a " + name, count: n => (n === 1 ? "1 juego" : n + " juegos"),
+    footer: ["Para añadir un juego, crea su carpeta y registra una entrada en la lista ", " de esta página."]
+  },
+  en: {
+    doc: "Games", title: "Games", lead: "Pick one and start playing. Each game lives in its own folder.",
+    empty: "There are no games in the menu yet.", lang: "Language", play: "Play",
+    playAria: name => "Play " + name, count: n => (n === 1 ? "1 game" : n + " games"),
+    footer: ["To add a game, create its folder and add an entry to the ", " list on this page."]
+  },
+  fr: {
+    doc: "Jeux", title: "Jeux", lead: "Choisis-en un et commence à jouer. Chaque jeu a son propre dossier.",
+    empty: "Il n’y a encore aucun jeu dans le menu.", lang: "Langue", play: "Jouer",
+    playAria: name => "Jouer à " + name, count: n => (n === 1 ? "1 jeu" : n + " jeux"),
+    footer: ["Pour ajouter un jeu, crée son dossier et ajoute une entrée à la liste ", " de cette page."]
+  }
+};
+
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+};
+function pickLang() {
+  const saved = store.get("juegos:idioma");
+  if (I18N[saved]) return saved;
+  for (const l of navigator.languages || [navigator.language || ""]) {
+    const b = String(l).slice(0, 2).toLowerCase();
+    if (I18N[b]) return b;
+  }
+  return "es";
+}
+let lang = pickLang();
+const T = k => I18N[lang][k];
+const local = v => (v && typeof v === "object" ? v[lang] || v.es || "" : v || "");
 
 const list = document.getElementById("games");
 const empty = document.getElementById("empty");
@@ -136,37 +200,56 @@ const count = document.getElementById("count");
 
 const folderOk = name => typeof name === "string" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name);
 
-GAMES.forEach(game => {
-  if (!folderOk(game.folder)) return;
-  const a = document.createElement("a");
-  a.className = "card";
-  a.href = "./" + game.folder + "/";
+function render() {
+  document.documentElement.lang = lang;
+  document.title = T("doc");
+  document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = T(el.dataset.i18n); });
+  document.querySelectorAll("[data-lang]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
 
-  const icon = document.createElement("span");
-  icon.className = "icon";
-  icon.setAttribute("aria-hidden", "true");
-  icon.textContent = game.emoji || "🎮";
+  const footer = document.getElementById("footer");
+  const code = document.createElement("code");
+  code.textContent = "GAMES";
+  footer.replaceChildren(T("footer")[0], code, T("footer")[1]);
 
-  const body = document.createElement("span");
-  body.className = "body";
-  const h2 = document.createElement("h2");
-  h2.textContent = game.title || game.folder;
-  const p = document.createElement("p");
-  p.textContent = game.description || "";
-  body.append(h2, p);
+  list.replaceChildren();
+  GAMES.forEach(game => {
+    if (!folderOk(game.folder)) return;
+    const name = local(game.title) || game.folder;
+    const a = document.createElement("a");
+    a.className = "card";
+    a.href = "./" + game.folder + "/";
 
-  const play = document.createElement("span");
-  play.className = "play";
-  play.textContent = "Jugar";
+    const icon = document.createElement("span");
+    icon.className = "icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = game.emoji || "🎮";
 
-  a.setAttribute("aria-label", "Jugar a " + (game.title || game.folder));
-  a.append(icon, body, play);
-  list.append(a);
+    const body = document.createElement("span");
+    body.className = "body";
+    const h2 = document.createElement("h2");
+    h2.textContent = name;
+    const p = document.createElement("p");
+    p.textContent = local(game.description);
+    body.append(h2, p);
+
+    const play = document.createElement("span");
+    play.className = "play";
+    play.textContent = T("play");
+
+    a.setAttribute("aria-label", T("playAria")(name));
+    a.append(icon, body, play);
+    list.append(a);
+  });
+
+  const n = list.children.length;
+  count.textContent = T("count")(n);
+  empty.hidden = n !== 0;
+}
+
+document.querySelectorAll("[data-lang]").forEach(b => {
+  b.onclick = () => { lang = b.dataset.lang; store.set("juegos:idioma", lang); render(); };
 });
-
-const n = list.children.length;
-count.textContent = n === 1 ? "1 juego" : n + " juegos";
-empty.hidden = n !== 0;
+render();
 </script>
 </body>
 </html>

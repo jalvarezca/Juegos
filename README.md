@@ -39,6 +39,13 @@ Los archivos de un juego (imágenes, sonidos, scripts) van dentro de su carpeta 
    - `folder`: nombre de la carpeta, sin barras.
    - `emoji`: icono de la tarjeta.
 
+   El menú está en español, inglés y francés. `title` y `description` pueden ser un texto o un objeto con un texto por idioma; si falta un idioma, se usa el español:
+
+   ```js
+   title: { es: "Memoria", en: "Memory", fr: "Mémoire" },
+   description: { es: "Encuentra las parejas.", en: "Find the pairs.", fr: "Trouve les paires." }
+   ```
+
 El menú pinta una tarjeta por entrada y enlaza a `./<folder>/`.
 
 ## Juegos
