@@ -10,6 +10,7 @@ michis/index.html    Michis: un gato por color
 sudoku/index.html    Sudoku
 dulces/index.html    Dulces: junta tres iguales
 canonazo/index.html  Cañonazo: revienta las bolas
+reino/               Reino: construye y defiende (index.html y sus scripts)
 ```
 
 Los archivos de un juego (imágenes, sonidos, scripts) van dentro de su carpeta y se referencian con rutas relativas a esa carpeta.
@@ -51,7 +52,14 @@ El menú pinta una tarjeta por entrada y enlaza a `./<folder>/`.
 
 ## Publicar en Render
 
-El archivo `render.yaml` publica el repositorio como sitio estático en [Render](https://render.com). En Render, elige **New → Blueprint**, conecta tu cuenta de GitHub y selecciona este repositorio. Render publica la rama `main` tal cual (no hay paso de compilación) y vuelve a publicar cada vez que cambia `main`.
+El archivo `render.yaml` publica el repositorio como sitio estático en [Render](https://render.com). En Render, elige **New → Blueprint**, conecta tu cuenta de GitHub y selecciona este repositorio (en **Blueprint Path**, `render.yaml`). No hay paso de compilación: Render publica los archivos tal cual.
+
+Hay dos entornos, cada uno con su propia dirección:
+
+- **UAT** (`juegos-uat`): se publica desde la rama `uat`, para las pruebas de aceptación.
+- **Producción** (`juegos`): se publica desde la rama `main`.
+
+Los cambios entran primero en `uat` con un pull request. Cuando se han probado en el sitio de UAT, otro pull request de `uat` a `main` los lleva a producción.
 
 ## Juegos
 
@@ -59,3 +67,4 @@ El archivo `render.yaml` publica el repositorio como sitio estático en [Render]
 - **Sudoku** (`sudoku/`): completa la cuadrícula de 9×9 con los números del 1 al 9.
 - **Dulces** (`dulces/`): junta tres o más dulces iguales. Con 4 en línea, una L o una T, o 5 en línea consigues dulces especiales. Tiene 20 niveles con objetivos de puntos, gelatina o dulces que recoger, y se juega deslizando, tocando o con el teclado.
 - **Cañonazo** (`canonazo/`): mueve el cañón, que dispara solo, y revienta las bolas que rebotan; cada una se parte en dos al llegar a cero. Con las monedas se mejoran la potencia, la cadencia, los cañones, el imán y el escudo. Se juega con el ratón, el dedo o el teclado.
+- **Reino** (`reino/`): juego de estrategia para un jugador inspirado en Kingshot. Mejora los edificios para subir el Centro urbano, produce pan, madera, piedra, hierro y oro (también con la página cerrada), entrena infantería, caballería y arqueros, recluta y mejora héroes, investiga en la Academia, defiende el pueblo en tiempo real moviendo al gobernador entre torres, lucha en la expedición, ataca rebeldes y recolecta en el mapa, caza al oso con la alianza y completa misiones. La lógica está en `motor.js`, `defensa.js` y `datos.js`, y la interfaz en `interfaz.js` y `textos.js`.
