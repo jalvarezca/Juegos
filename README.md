@@ -9,6 +9,7 @@ index.html           Menú de juegos
 michis/index.html    Michis: un gato por color
 sudoku/index.html    Sudoku
 dulces/index.html    Dulces: junta tres iguales
+canonazo/index.html  Cañonazo: revienta las bolas
 ```
 
 Los archivos de un juego (imágenes, sonidos, scripts) van dentro de su carpeta y se referencian con rutas relativas a esa carpeta.
@@ -53,3 +54,4 @@ El menú pinta una tarjeta por entrada y enlaza a `./<folder>/`.
 - **Michis** (`michis/`): coloca un gato en cada color, uno por fila y columna, sin que se toquen.
 - **Sudoku** (`sudoku/`): completa la cuadrícula de 9×9 con los números del 1 al 9.
 - **Dulces** (`dulces/`): junta tres o más dulces iguales. Con 4 en línea, una L o una T, o 5 en línea consigues dulces especiales. Tiene 20 niveles con objetivos de puntos, gelatina o dulces que recoger, y se juega deslizando, tocando o con el teclado.
+- **Cañonazo** (`canonazo/`): mueve el cañón, que dispara solo, y revienta las bolas que rebotan; cada una se parte en dos al llegar a cero. Con las monedas se mejoran la potencia, la cadencia, los cañones, el imán y el escudo. Se juega con el ratón, el dedo o el teclado.
