@@ -51,7 +51,14 @@ El menú pinta una tarjeta por entrada y enlaza a `./<folder>/`.
 
 ## Publicar en Render
 
-El archivo `render.yaml` publica el repositorio como sitio estático en [Render](https://render.com). En Render, elige **New → Blueprint**, conecta tu cuenta de GitHub y selecciona este repositorio. Render publica la rama `main` tal cual (no hay paso de compilación) y vuelve a publicar cada vez que cambia `main`.
+El archivo `render.yaml` publica el repositorio como sitio estático en [Render](https://render.com). En Render, elige **New → Blueprint**, conecta tu cuenta de GitHub y selecciona este repositorio (en **Blueprint Path**, `render.yaml`). No hay paso de compilación: Render publica los archivos tal cual.
+
+Hay dos entornos, cada uno con su propia dirección:
+
+- **QA** (`juegos-qa`): se publica desde la rama `QA`, para las pruebas de aceptación (UAT).
+- **Producción** (`juegos`): se publica desde la rama `main`.
+
+Los cambios entran primero en `QA` con un pull request. Cuando se han probado en el sitio de QA, otro pull request de `QA` a `main` los lleva a producción.
 
 ## Juegos
 
