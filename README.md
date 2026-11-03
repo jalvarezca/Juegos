@@ -49,6 +49,10 @@ Los archivos de un juego (imágenes, sonidos, scripts) van dentro de su carpeta 
 
 El menú pinta una tarjeta por entrada y enlaza a `./<folder>/`.
 
+## Publicar en Render
+
+El archivo `render.yaml` publica el repositorio como sitio estático en [Render](https://render.com). En Render, elige **New → Blueprint**, conecta tu cuenta de GitHub y selecciona este repositorio. Render publica la rama `main` tal cual (no hay paso de compilación) y vuelve a publicar cada vez que cambia `main`.
+
 ## Juegos
 
 - **Michis** (`michis/`): coloca un gato en cada color, uno por fila y columna, sin que se toquen.
