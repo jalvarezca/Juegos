@@ -1,10 +1,20 @@
-# Publicación en Render como sitio estático (https://render.com/docs/blueprint-spec).
-# En Render: New → Blueprint → elegir este repositorio.
+# Publicación en Render como sitios estáticos (https://render.com/docs/blueprint-spec).
+# En Render: New → Blueprint → elegir este repositorio (Blueprint Path: render.yaml).
 # La raíz del repositorio es el sitio: index.html es el menú y cada juego vive en su carpeta.
+# Hay dos entornos: uat para las pruebas de aceptación (UAT) y main para producción.
 services:
+  # Producción: se publica cada vez que cambia main.
   - type: web
     runtime: static
     name: juegos
     branch: main
     buildCommand: "true" # No hay nada que compilar.
+    staticPublishPath: .
+
+  # UAT: se publica cada vez que cambia la rama uat.
+  - type: web
+    runtime: static
+    name: juegos-uat
+    branch: uat
+    buildCommand: "true"
     staticPublishPath: .
