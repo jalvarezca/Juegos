@@ -55,10 +55,10 @@ El archivo `render.yaml` publica el repositorio como sitio estático en [Render]
 
 Hay dos entornos, cada uno con su propia dirección:
 
-- **QA** (`juegos-qa`): se publica desde la rama `QA`, para las pruebas de aceptación (UAT).
+- **UAT** (`juegos-uat`): se publica desde la rama `uat`, para las pruebas de aceptación.
 - **Producción** (`juegos`): se publica desde la rama `main`.
 
-Los cambios entran primero en `QA` con un pull request. Cuando se han probado en el sitio de QA, otro pull request de `QA` a `main` los lleva a producción.
+Los cambios entran primero en `uat` con un pull request. Cuando se han probado en el sitio de UAT, otro pull request de `uat` a `main` los lleva a producción.
 
 ## Juegos
 
