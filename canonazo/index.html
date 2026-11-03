@@ -1,0 +1,1017 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cañonazo: revienta las bolas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#eef1f8; --surface:#fbfcff; --chip:#e6eaf5; --ink:#2b2851; --muted:#6b6890;
+  --edge:rgba(43,40,81,.08); --lift:0 10px 28px rgba(43,40,81,.12);
+  --accent:#ff6a3d; --accent-ink:#fff; --good:#1f9e55; --warn:#e5484d; --gold:#ffc83d; --gold-edge:#c98d00;
+  --sky-top:#bfe3ff; --sky-bottom:#f4f9ff; --hill:#cfe6d4; --ground:#7cc58a; --ground-edge:#4f9d60;
+  --scrim:rgba(23,22,42,.52);
+  color-scheme:light;
+  box-sizing:border-box;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#17162a; --surface:#221f3a; --chip:#2c2948; --ink:#ecebfa; --muted:#a6a3c8;
+    --edge:rgba(236,235,250,.07); --lift:0 10px 28px rgba(0,0,0,.4);
+    --good:#4cd685; --warn:#ff6b6b;
+    --sky-top:#141a3a; --sky-bottom:#2b2552; --hill:#2c3550; --ground:#2f6b45; --ground-edge:#1f4a30;
+    --scrim:rgba(0,0,0,.62);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#17162a; --surface:#221f3a; --chip:#2c2948; --ink:#ecebfa; --muted:#a6a3c8;
+  --edge:rgba(236,235,250,.07); --lift:0 10px 28px rgba(0,0,0,.4);
+  --good:#4cd685; --warn:#ff6b6b;
+  --sky-top:#141a3a; --sky-bottom:#2b2552; --hill:#2c3550; --ground:#2f6b45; --ground-edge:#1f4a30;
+  --scrim:rgba(0,0,0,.62);
+  color-scheme:dark;
+}
+html{height:100%}
+*,*::before,*::after{box-sizing:inherit}
+body{
+  margin:0;min-height:100%;color:var(--ink);
+  font-family:"Baloo 2",ui-rounded,"SF Pro Rounded","Segoe UI",Roboto,system-ui,sans-serif;
+  background:
+    radial-gradient(800px 380px at 10% -10%, rgba(255,106,61,.20), transparent 60%),
+    radial-gradient(700px 360px at 110% 0%, rgba(58,156,255,.22), transparent 55%),
+    var(--paper);
+  -webkit-tap-highlight-color:transparent;
+}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+.app{
+  max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:10px;
+  padding:max(14px, env(safe-area-inset-top)) 14px max(22px, env(safe-area-inset-bottom));
+}
+.back{
+  align-self:flex-start;margin:-4px 0 -4px;padding:2px;border-radius:8px;
+  color:var(--muted);font-weight:700;font-size:14px;line-height:1.2;text-decoration:none;
+}
+.back:hover{color:var(--ink)}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand{display:flex;align-items:center;gap:8px;min-width:0}
+.brand svg{width:42px;height:42px;flex:none}
+.brand h1{margin:0;font-size:34px;line-height:1;font-weight:800;letter-spacing:-.5px}
+.brand p{margin:2px 0 0;font-size:14px;line-height:1.1;color:var(--muted);font-weight:600}
+.pill{
+  display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;white-space:nowrap;
+  background:var(--surface);box-shadow:inset 0 0 0 1px var(--edge);font-weight:800;font-size:20px;line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+.coin{width:22px;height:22px;flex:none}
+
+/* Marcador de la partida */
+.hud{display:flex;align-items:center;gap:8px}
+.hud .lvl{font-weight:800;font-size:17px;white-space:nowrap}
+.bar{position:relative;flex:1;height:16px;border-radius:999px;background:var(--chip);overflow:hidden}
+.bar i{position:absolute;inset:0 auto 0 0;width:0;border-radius:inherit;background:linear-gradient(90deg,#ffb36b,var(--accent));transition:width .2s ease}
+.shields{display:flex;gap:2px}
+.shields svg{width:20px;height:20px}
+.icon-btn{
+  display:grid;place-items:center;width:40px;height:40px;flex:none;border:0;border-radius:14px;cursor:pointer;
+  background:var(--surface);box-shadow:inset 0 0 0 1px var(--edge);
+}
+.icon-btn svg{width:22px;height:22px}
+.icon-btn[aria-pressed="false"] .snd-on,.icon-btn[aria-pressed="true"] .snd-off{display:none}
+.icon-btn[aria-pressed="false"]{color:var(--muted)}
+.icon-btn:active,.big:active,.buy:active{transform:scale(.96)}
+
+/* Escenario */
+.stage{
+  position:relative;width:100%;margin:0 auto;aspect-ratio:360/560;border-radius:22px;overflow:hidden;
+  max-width:max(260px, calc((100vh - 200px) * 360 / 560));
+  max-width:max(260px, calc((100svh - 200px) * 360 / 560));
+  box-shadow:var(--lift);background:var(--sky-bottom);
+  touch-action:none;user-select:none;-webkit-user-select:none;
+}
+#game{position:absolute;inset:0;width:100%;height:100%;display:block;outline:none;cursor:grab}
+#game:focus-visible{box-shadow:inset 0 0 0 3px var(--accent)}
+.toast{
+  position:absolute;left:50%;top:38%;z-index:3;pointer-events:none;opacity:0;white-space:nowrap;
+  font-weight:800;font-size:clamp(28px, 9vw, 44px);line-height:1;color:#fff;
+  -webkit-text-stroke:8px #d9481c;paint-order:stroke fill;filter:drop-shadow(0 6px 10px rgba(0,0,0,.25));
+  transform:translate(-50%,-50%);
+}
+.toast.on{animation:toast 1.3s ease forwards}
+@keyframes toast{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.4) rotate(-6deg)}
+  18%{opacity:1;transform:translate(-50%,-50%) scale(1.1) rotate(-3deg)}
+  30%{transform:translate(-50%,-50%) scale(1) rotate(-3deg)}
+  80%{opacity:1}
+  100%{opacity:0;transform:translate(-50%,-70%) rotate(-3deg)}
+}
+
+/* Pantallas sobre el escenario */
+.screen{
+  position:absolute;inset:0;z-index:5;display:none;align-items:center;justify-content:center;padding:14px;
+  background:var(--scrim);overflow:auto;
+}
+.screen.on{display:flex}
+.card{
+  width:100%;max-width:360px;margin:auto;padding:14px 12px 12px;border-radius:22px;text-align:center;
+  background:var(--surface);box-shadow:0 20px 50px rgba(0,0,0,.25);animation:rise .3s cubic-bezier(.2,1.3,.5,1);
+}
+@keyframes rise{from{transform:translateY(16px) scale(.97);opacity:0}}
+.card h2{margin:0;font-size:26px;line-height:1.1;font-weight:800}
+.card p{margin:6px 0 0;color:var(--muted);font-weight:600;font-size:15.5px;line-height:1.3}
+.card p:empty{display:none}
+.stats{display:flex;justify-content:center;gap:8px;margin:10px 0 2px}
+.stat{flex:1;background:var(--chip);border-radius:14px;padding:5px 4px}
+.stat b{display:flex;align-items:center;justify-content:center;gap:4px;font-size:22px;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat b svg{width:22px;height:22px;flex:none}
+.stat span{font-size:13px;color:var(--muted);font-weight:600}
+.actions{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.big{border:0;border-radius:15px;padding:11px;font-weight:800;font-size:17px;cursor:pointer;background:var(--chip)}
+.big.primary{background:var(--accent);color:var(--accent-ink)}
+
+/* Taller de mejoras */
+.shop{display:flex;flex-direction:column;gap:5px;margin-top:10px;text-align:left}
+.up{display:flex;align-items:center;gap:9px;padding:5px 6px 5px 8px;border-radius:14px;background:var(--chip)}
+.up .ico{width:30px;height:30px;flex:none;display:grid;place-items:center;border-radius:11px;background:var(--surface);font-size:20px;line-height:1}
+.up .txt{flex:1;min-width:0;line-height:1.15}
+.up b{display:block;font-size:16px}
+.up small{display:block;color:var(--muted);font-weight:600;font-size:13px}
+.buy{
+  display:flex;align-items:center;gap:4px;flex:none;min-width:84px;justify-content:center;
+  border:0;border-radius:11px;padding:7px 9px;cursor:pointer;font-weight:800;font-size:15px;
+  background:var(--accent);color:var(--accent-ink);font-variant-numeric:tabular-nums;
+}
+.buy svg{width:16px;height:16px}
+.buy:disabled{cursor:default;background:var(--surface);color:var(--muted)}
+
+.foot{display:flex;flex-direction:column;gap:8px;color:var(--muted);font-size:14px;line-height:1.3;font-weight:600}
+.langrow{display:flex;align-items:center;gap:10px;color:var(--ink)}
+.seg{display:flex;padding:4px;gap:2px;border-radius:16px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--edge)}
+.seg button{border:0;background:none;padding:6px 12px;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+
+@media (max-height:700px){
+  .app{gap:8px;padding-top:10px}
+  .brand h1{font-size:28px}
+  .brand svg{width:36px;height:36px}
+}
+@media (prefers-reduced-motion: reduce){
+  .card,.toast.on{animation-duration:.01ms}
+  .bar i{transition:none}
+}
+</style>
+</head>
+<body>
+<main class="app">
+  <a class="back" href="../" data-i18n="menu">Volver al menú</a>
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#logo"/></svg>
+      <div>
+        <h1 data-i18n="title">Cañonazo</h1>
+        <p data-i18n="tagline">Revienta las bolas antes de que te aplasten</p>
+      </div>
+    </div>
+    <div class="pill"><svg class="coin" viewBox="0 0 24 24" aria-hidden="true"><use href="#coin"/></svg><span id="coins">0</span><span class="sr" data-i18n="coinsSr">monedas</span></div>
+  </header>
+
+  <div class="hud">
+    <span class="lvl"><span data-i18n="level">Nivel</span> <b id="levelNum">1</b></span>
+    <div class="bar" id="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-i18n-aria="progress" aria-label="Progreso del nivel"><i id="barFill"></i></div>
+    <div class="shields" id="shields" aria-hidden="true"></div>
+    <button class="icon-btn" id="soundBtn" type="button" aria-pressed="true" data-i18n-aria="sound" aria-label="Sonido"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path class="snd-on" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/><path class="snd-off" d="M16 9.5l5 5M21 9.5l-5 5"/></svg></button>
+    <button class="icon-btn" id="pauseBtn" type="button" data-i18n-aria="pause" aria-label="Pausa"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg></button>
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="game" tabindex="0" role="application" data-i18n-aria="board" aria-label="Campo de juego" aria-describedby="kbdHelp"></canvas>
+    <div class="toast" id="toast" aria-hidden="true"></div>
+    <div class="screen" id="screen" role="dialog" aria-modal="true" aria-labelledby="sTitle">
+      <div class="card">
+        <h2 id="sTitle"></h2>
+        <p id="sText"></p>
+        <div id="sBody"></div>
+        <div class="actions" id="sActions"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span data-i18n="help">Mueve el cañón arrastrando el dedo o el ratón; dispara solo. Cada disparo resta 1 al número de la bola y, al llegar a cero, se parte en dos más pequeñas. Si una bola te toca, pierdes. Recoge las monedas para mejorar el cañón.</span>
+    <span id="kbdHelp" data-i18n="kbd">Con teclado: flechas o A y D para moverte, P o Esc para pausar.</span>
+    <div class="langrow">
+      <span id="langLabel" data-i18n="lang">Idioma</span>
+      <div class="seg" role="group" aria-labelledby="langLabel">
+        <button type="button" data-lang="es" lang="es" aria-pressed="true">Español</button>
+        <button type="button" data-lang="en" lang="en" aria-pressed="false">English</button>
+        <button type="button" data-lang="fr" lang="fr" aria-pressed="false">Français</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="sr" id="live" aria-live="polite"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <radialGradient id="gCoin" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff3b0"/><stop offset=".55" stop-color="#ffc83d"/><stop offset="1" stop-color="#d99a00"/></radialGradient>
+    <symbol id="coin" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10.5" fill="#b07c00"/>
+      <circle cx="12" cy="12" r="9.3" fill="url(#gCoin)"/>
+      <circle cx="12" cy="12" r="6.2" fill="none" stroke="#c98d00" stroke-width="1.4"/>
+      <path d="M12 8.4l1.1 2.3 2.5.3-1.8 1.7.5 2.5L12 14l-2.3 1.2.5-2.5-1.8-1.7 2.5-.3z" fill="#fff7d1"/>
+    </symbol>
+    <symbol id="shield" viewBox="0 0 24 24">
+      <path d="M12 2.5l8 3v6.2c0 4.9-3.4 8.4-8 9.8-4.6-1.4-8-4.9-8-9.8V5.5z" fill="#3a9cff" stroke="#0e57ad" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M8 11.5l2.8 2.8L16.5 8.6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="logo" viewBox="0 0 100 100">
+      <circle cx="74" cy="20" r="13" fill="#ff4d5e"/>
+      <circle cx="70" cy="16" r="4" fill="#fff" opacity=".7"/>
+      <rect x="36" y="22" width="22" height="46" rx="11" fill="#3b3a5c" transform="rotate(28 47 58)"/>
+      <rect x="36" y="22" width="22" height="10" rx="5" fill="#ff6a3d" transform="rotate(28 47 58)"/>
+      <rect x="18" y="60" width="62" height="20" rx="10" fill="#ff6a3d"/>
+      <circle cx="32" cy="82" r="11" fill="#2b2851"/><circle cx="32" cy="82" r="4.5" fill="#c9c6e8"/>
+      <circle cx="66" cy="82" r="11" fill="#2b2851"/><circle cx="66" cy="82" r="4.5" fill="#c9c6e8"/>
+    </symbol>
+  </defs>
+</svg>
+
+<script>
+(() => {
+  "use strict";
+
+  // <motor> Física y reglas, sin DOM. La interfaz llama a step() y dibuja el estado.
+  const Engine = (() => {
+    const W = 360, H = 560, GROUND = 510, G = 900;
+    const RADIUS = [0, 16, 23, 31, 40];
+    const PEAK = [0, 255, 295, 335, 375];
+    const SPEED = 560;
+    // Ajustes de dificultad y economía (probados con partidas simuladas).
+    const TUNE = { rate: 7, rateGrowth: 1.13, power: 1.25, hp: 10, hpGrowth: 1.18, coins: 0.34, powerCost: 1.5, rateCost: 1.45, barrelsCost: [0, 400, 3000], tierHP: [0, 1, 1.1, 1.2, 1.3] };
+    const bounceV = t => Math.sqrt(2 * G * PEAK[t]);
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+    function mulberry(seed) {
+      return () => {
+        seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+        let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    // Mejoras: nivel actual -> precio del siguiente (null si está al máximo).
+    const UPGRADES = {
+      power: { start: 1, max: 40, cost: l => Math.round(25 * Math.pow(TUNE.powerCost, l - 1)) },
+      rate: { start: 1, max: 15, cost: l => Math.round(25 * Math.pow(TUNE.rateCost, l - 1)) },
+      barrels: { start: 1, max: 3, cost: l => TUNE.barrelsCost[l] },
+      magnet: { start: 1, max: 6, cost: l => Math.round(40 * Math.pow(2, l - 1)) },
+      shield: { start: 0, max: 3, cost: l => [60, 300, 1200][l] }
+    };
+    const cost = (key, level) => (level >= UPGRADES[key].max ? null : UPGRADES[key].cost(level));
+    const freshUpgrades = () => Object.fromEntries(Object.keys(UPGRADES).map(k => [k, UPGRADES[k].start]));
+    const stats = u => ({
+      dmg: Math.pow(TUNE.power, u.power - 1) * [1, 1, 0.8, 0.73][u.barrels],
+      rate: Math.min(30, TUNE.rate * Math.pow(TUNE.rateGrowth, u.rate - 1)),
+      barrels: u.barrels,
+      magnet: [0, 40, 70, 100, 140, 190, 260][u.magnet],
+      shields: u.shield
+    });
+
+    const baseHP = L => TUNE.hp * Math.pow(TUNE.hpGrowth, L - 1);
+    const childHP = hp => Math.max(1, Math.ceil(hp * 0.5));
+    const treeHP = (t, hp) => (t <= 1 ? hp : hp + 2 * treeHP(t - 1, childHP(hp)));
+
+    // Cada nivel es siempre igual: mismo número de bolas, tamaños y vidas.
+    function planLevel(L) {
+      const rng = mulberry(L * 7919 + 13);
+      const n = Math.min(14, 4 + Math.floor(L * 0.6));
+      // Cada 3 niveles aparece un tamaño más; al principio solo en una parte de las bolas.
+      const prog = (L + 2) / 3, top = Math.min(4, 1 + Math.floor(prog));
+      const share = prog >= 4 ? 0.7 : 0.25 + 0.45 * (prog - Math.floor(prog));
+      const balls = [];
+      for (let i = 0; i < n; i++) {
+        const tier = rng() < share ? top : Math.max(1, top - 1 - (rng() < 0.3 ? 1 : 0));
+        const hp = Math.max(1, Math.round(baseHP(L) * TUNE.tierHP[tier] * (0.7 + rng() * 0.6)));
+        balls.push({ tier, hp, side: rng() < 0.5 ? -1 : 1, y: 100 + rng() * 90, speed: 55 + rng() * 35 + Math.min(30, L * 1.5) });
+      }
+      return { L, balls, active: Math.min(4, 2 + Math.floor(L / 5)), total: balls.reduce((s, b) => s + treeHP(b.tier, b.hp), 0) };
+    }
+
+    function create(L, upgrades, rng) {
+      const plan = planLevel(L), st = stats(upgrades);
+      return {
+        L, plan, st, rng: rng || Math.random, t: 0, state: "play", finished: false, endT: 0,
+        cannon: { x: W / 2, inv: 0, shields: st.shields, kick: 0 },
+        balls: [], bullets: [], coins: [], events: [],
+        queue: plan.balls.slice(), spawnT: 0.8, fireT: 0.15, done: 0, total: plan.total, earned: 0,
+        nextId: 1, nextTree: 1
+      };
+    }
+
+    function makeBall(S, o) {
+      return { id: S.nextId++, tier: o.tier, r: RADIUS[o.tier], hp: o.hp, max: o.hp, x: o.x, y: o.y, vx: o.vx, vy: o.vy, flash: 0, entering: !!o.entering, tree: o.tree, dead: false };
+    }
+
+    function spawn(S, dt) {
+      S.spawnT -= dt;
+      const trees = new Set(S.balls.map(b => b.tree)).size;
+      if (!trees && S.queue.length && S.spawnT > 0.4) S.spawnT = 0.4;
+      if (!S.queue.length || S.spawnT > 0 || trees >= S.plan.active) return;
+      const p = S.queue.shift(), r = RADIUS[p.tier];
+      S.balls.push(makeBall(S, { tier: p.tier, hp: p.hp, x: p.side < 0 ? -r : W + r, y: p.y, vx: -p.side * p.speed, vy: 0, entering: true, tree: S.nextTree++ }));
+      S.spawnT = 2.2;
+    }
+
+    function moveCannon(S, dt, input) {
+      const c = S.cannon;
+      if (input && input.target != null) c.x += clamp(input.target - c.x, -SPEED * 1.8 * dt, SPEED * 1.8 * dt);
+      else if (input && input.dir) c.x += input.dir * SPEED * dt;
+      c.x = clamp(c.x, 22, W - 22);
+      c.inv = Math.max(0, c.inv - dt);
+      c.kick = Math.max(0, c.kick - dt);
+    }
+
+    function fire(S, dt) {
+      S.fireT -= dt;
+      const n = S.st.barrels, offs = n === 1 ? [0] : n === 2 ? [-7, 7] : [-11, 0, 11];
+      while (S.fireT <= 0) {
+        S.fireT += 1 / S.st.rate;
+        for (const o of offs) S.bullets.push({ x: S.cannon.x + o, y: GROUND - 46, dead: false });
+        S.cannon.kick = 0.05;
+        S.events.push({ t: "shot" });
+      }
+    }
+
+    function moveBalls(S, dt) {
+      for (const b of S.balls) {
+        b.vy += G * dt;
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
+        if (b.y + b.r >= GROUND) { b.y = GROUND - b.r; b.vy = -bounceV(b.tier); }
+        if (b.y - b.r < 0) { b.y = b.r; b.vy = Math.abs(b.vy) * 0.5; }
+        if (b.entering) { if (b.x - b.r >= 0 && b.x + b.r <= W) b.entering = false; }
+        else if (b.x - b.r < 0) { b.x = b.r; b.vx = Math.abs(b.vx); }
+        else if (b.x + b.r > W) { b.x = W - b.r; b.vx = -Math.abs(b.vx); }
+        b.flash = Math.max(0, b.flash - dt);
+      }
+    }
+
+    function dropCoins(S, x, y, value) {
+      const k = Math.min(4, 1 + Math.floor(Math.log10(value + 1) * 1.5));
+      for (let i = 0; i < k; i++) {
+        const v = Math.floor(value / k) + (i < value % k ? 1 : 0);
+        if (v > 0) S.coins.push({ x, y, vx: (S.rng() - 0.5) * 150, vy: -110 - S.rng() * 150, v, life: 6, ground: false });
+      }
+    }
+
+    function destroy(S, b) {
+      b.dead = true;
+      dropCoins(S, b.x, b.y, Math.max(1, Math.ceil(b.max * TUNE.coins)));
+      S.events.push({ t: b.tier > 1 ? "split" : "pop", x: b.x, y: b.y, r: b.r, tier: b.tier });
+      if (b.tier > 1) {
+        const t = b.tier - 1, hp = childHP(b.max), v = Math.max(65, Math.abs(b.vx));
+        for (const s of [-1, 1]) {
+          const x = clamp(b.x + s * RADIUS[t] * 0.6, RADIUS[t], W - RADIUS[t]);
+          S.balls.push(makeBall(S, { tier: t, hp, x, y: Math.min(b.y, GROUND - RADIUS[t]), vx: s * v, vy: -bounceV(t) * 0.7, tree: b.tree }));
+        }
+      }
+    }
+
+    function moveBullets(S, dt) {
+      for (const u of S.bullets) {
+        u.y -= 820 * dt;
+        if (u.y < -12) { u.dead = true; continue; }
+        for (const b of S.balls) {
+          if (b.dead) continue;
+          const dx = u.x - b.x, dy = u.y - b.y, rr = b.r + 3;
+          if (dx * dx + dy * dy > rr * rr) continue;
+          u.dead = true;
+          S.done += Math.min(b.hp, S.st.dmg);
+          b.hp -= S.st.dmg;
+          b.flash = 0.05;
+          if (b.hp <= 1e-6) destroy(S, b);
+          else S.events.push({ t: "hit" });
+          break;
+        }
+      }
+      S.bullets = S.bullets.filter(u => !u.dead);
+      S.balls = S.balls.filter(b => !b.dead);
+    }
+
+    function moveCoins(S, dt) {
+      const c = S.cannon, cy = GROUND - 22, mag = S.state === "won" ? 9999 : S.st.magnet;
+      for (const k of S.coins) {
+        const dx = c.x - k.x, dy = cy - k.y, dist = Math.hypot(dx, dy);
+        if (dist < 24) { k.taken = true; S.earned += k.v; S.events.push({ t: "coin", v: k.v }); continue; }
+        if (dist < mag) {
+          const sp = S.state === "won" ? 700 : 430;
+          k.x += dx / dist * sp * dt; k.y += dy / dist * sp * dt; k.ground = false;
+          continue;
+        }
+        if (!k.ground) {
+          k.vy += G * dt;
+          k.x += k.vx * dt; k.y += k.vy * dt;
+          if (k.x < 8 || k.x > W - 8) { k.x = clamp(k.x, 8, W - 8); k.vx = -k.vx * 0.5; }
+          if (k.y > GROUND - 7) {
+            k.y = GROUND - 7; k.vy = -Math.abs(k.vy) * 0.35; k.vx *= 0.75;
+            if (Math.abs(k.vy) < 45) { k.vy = 0; k.ground = true; }
+          }
+        } else k.life -= dt;
+      }
+      S.coins = S.coins.filter(k => !k.taken && k.life > 0);
+    }
+
+    function circleRect(b, x, y, w, h, shrink) {
+      const nx = clamp(b.x, x, x + w), ny = clamp(b.y, y, y + h), r = b.r * shrink;
+      return (b.x - nx) * (b.x - nx) + (b.y - ny) * (b.y - ny) < r * r;
+    }
+
+    function touchCannon(S) {
+      const c = S.cannon;
+      if (c.inv > 0) return;
+      for (const b of S.balls) {
+        if (!circleRect(b, c.x - 19, GROUND - 30, 38, 30, 0.82) && !circleRect(b, c.x - 7, GROUND - 46, 14, 16, 0.82)) continue;
+        if (c.shields > 0) {
+          c.shields--; c.inv = 1.6; b.vy = -bounceV(b.tier);
+          S.events.push({ t: "shield" });
+        } else {
+          S.state = "lost";
+          S.events.push({ t: "lost", x: b.x, y: b.y });
+        }
+        return;
+      }
+    }
+
+    function step(S, dt, input) {
+      if (S.state === "lost" || S.finished) return;
+      S.t += dt;
+      moveCannon(S, dt, input);
+      if (S.state === "play") { spawn(S, dt); fire(S, dt); }
+      moveBalls(S, dt);
+      moveBullets(S, dt);
+      moveCoins(S, dt);
+      if (S.state === "play") {
+        touchCannon(S);
+        if (S.state === "play" && !S.queue.length && !S.balls.length) { S.state = "won"; S.endT = 1; S.events.push({ t: "won" }); }
+      } else if (S.state === "won") {
+        S.endT -= dt;
+        S.bullets.length = 0;
+        if (S.endT <= 0 && (!S.coins.length || S.endT < -3)) S.finished = true;
+      }
+    }
+
+    return { TUNE, W, H, GROUND, RADIUS, UPGRADES, cost, freshUpgrades, stats, baseHP, planLevel, treeHP, create, step, mulberry };
+  })();
+  // </motor>
+
+  // <interfaz>
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
+  const NB = " ";
+  const I18N = {
+    es: {
+      doc: "Cañonazo: revienta las bolas", title: "Cañonazo", tagline: "Revienta las bolas antes de que te aplasten", menu: "Volver al menú",
+      level: "Nivel", coinsSr: "monedas", progress: "Progreso del nivel", sound: "Sonido", pause: "Pausa", board: "Campo de juego", lang: "Idioma",
+      help: "Mueve el cañón arrastrando el dedo o el ratón; dispara solo. Cada disparo resta al número de la bola y, al llegar a cero, se parte en dos más pequeñas. Si una bola te toca, pierdes. Recoge las monedas para mejorar el cañón.",
+      kbd: "Con teclado: flechas o A y D para moverte, P o Esc para pausar.",
+      shopTitle: "Taller", shopText: "Mejora el cañón con tus monedas.",
+      winTitle: n => `¡Nivel ${n} superado!`, loseTitle: "¡Te aplastaron!", loseText: () => "Te quedas con las monedas que recogiste.",
+      earned: "monedas ganadas", reached: "del nivel",
+      play: n => `Jugar nivel ${n}`, retry: n => `Reintentar nivel ${n}`,
+      pausedTitle: "Pausa", pausedText: "El juego está detenido.", resume: "Seguir", quit: "Dejar el nivel",
+      names: { power: "Potencia", rate: "Cadencia", barrels: "Cañones", magnet: "Imán", shield: "Escudo" },
+      effect: {
+        power: v => `Cada disparo quita ${v}`, rate: v => `${v} disparos por segundo`,
+        barrels: v => (v === 1 ? "1 cañón" : `${v} cañones`), magnet: v => `Alcance ${v} de 6`,
+        shield: v => (v === 0 ? "Sin escudo" : v === 1 ? "Aguanta 1 golpe por nivel" : `Aguanta ${v} golpes por nivel`)
+      },
+      lvlShort: n => `nivel ${n}`, max: "Máx.", buyAria: (name, c) => `Mejorar ${name} por ${c} monedas`, maxAria: name => `${name} al máximo`,
+      startToast: n => `Nivel ${n}`, wonToast: "¡Bien hecho!", shieldToast: "¡Escudo!",
+      sayStart: n => `Nivel ${n}. ¡Adelante!`, sayShield: "El escudo te salvó.", sayLost: p => `Te tocó una bola. Llegaste al ${p}${NB}% del nivel.`,
+      sayWon: (n, c) => `Nivel ${n} superado. Ganaste ${c} monedas.`, sayBought: (name, l) => `${name}: ${l}.`
+    },
+    en: {
+      doc: "Cannon Pop: blast the balls", title: "Cannon Pop", tagline: "Blast the balls before they squash you", menu: "Back to menu",
+      level: "Level", coinsSr: "coins", progress: "Level progress", sound: "Sound", pause: "Pause", board: "Playing field", lang: "Language",
+      help: "Move the cannon by dragging your finger or the mouse; it fires on its own. Each shot lowers a ball’s number, and at zero it splits into two smaller ones. If a ball touches you, you lose. Grab the coins to upgrade your cannon.",
+      kbd: "Keyboard: arrows or A and D to move, P or Esc to pause.",
+      shopTitle: "Workshop", shopText: "Upgrade your cannon with your coins.",
+      winTitle: n => `Level ${n} complete!`, loseTitle: "Squashed!", loseText: () => "You keep the coins you picked up.",
+      earned: "coins earned", reached: "of the level",
+      play: n => `Play level ${n}`, retry: n => `Retry level ${n}`,
+      pausedTitle: "Paused", pausedText: "The game is stopped.", resume: "Resume", quit: "Leave the level",
+      names: { power: "Power", rate: "Fire rate", barrels: "Barrels", magnet: "Magnet", shield: "Shield" },
+      effect: {
+        power: v => `Each shot takes off ${v}`, rate: v => `${v} shots per second`,
+        barrels: v => (v === 1 ? "1 barrel" : `${v} barrels`), magnet: v => `Range ${v} of 6`,
+        shield: v => (v === 0 ? "No shield" : v === 1 ? "Takes 1 hit per level" : `Takes ${v} hits per level`)
+      },
+      lvlShort: n => `level ${n}`, max: "Max", buyAria: (name, c) => `Upgrade ${name} for ${c} coins`, maxAria: name => `${name} is maxed out`,
+      startToast: n => `Level ${n}`, wonToast: "Well done!", shieldToast: "Shield!",
+      sayStart: n => `Level ${n}. Go!`, sayShield: "Your shield saved you.", sayLost: p => `A ball hit you. You got ${p}% of the way through.`,
+      sayWon: (n, c) => `Level ${n} complete. You earned ${c} coins.`, sayBought: (name, l) => `${name}: ${l}.`
+    },
+    fr: {
+      doc: `Canonnade${NB}: fais éclater les boules`, title: "Canonnade", tagline: "Fais éclater les boules avant qu’elles t’écrasent", menu: "Retour au menu",
+      level: "Niveau", coinsSr: "pièces", progress: "Progression du niveau", sound: "Son", pause: "Pause", board: "Terrain de jeu", lang: "Langue",
+      help: "Déplace le canon en faisant glisser ton doigt ou la souris ; il tire tout seul. Chaque tir fait baisser le nombre d’une boule et, à zéro, elle se coupe en deux plus petites. Si une boule te touche, tu perds. Ramasse les pièces pour améliorer ton canon.",
+      kbd: `Au clavier${NB}: flèches ou A et D pour te déplacer, P ou Échap pour la pause.`,
+      shopTitle: "Atelier", shopText: "Améliore ton canon avec tes pièces.",
+      winTitle: n => `Niveau ${n} réussi${NB}!`, loseTitle: `Écrasé${NB}!`, loseText: () => "Tu gardes les pièces ramassées.",
+      earned: "pièces gagnées", reached: "du niveau",
+      play: n => `Jouer le niveau ${n}`, retry: n => `Rejouer le niveau ${n}`,
+      pausedTitle: "Pause", pausedText: "Le jeu est arrêté.", resume: "Continuer", quit: "Quitter le niveau",
+      names: { power: "Puissance", rate: "Cadence", barrels: "Canons", magnet: "Aimant", shield: "Bouclier" },
+      effect: {
+        power: v => `Chaque tir enlève ${v}`, rate: v => `${v} tirs par seconde`,
+        barrels: v => (v === 1 ? "1 canon" : `${v} canons`), magnet: v => `Portée ${v} sur 6`,
+        shield: v => (v === 0 ? "Pas de bouclier" : v === 1 ? "Encaisse 1 coup par niveau" : `Encaisse ${v} coups par niveau`)
+      },
+      lvlShort: n => `niveau ${n}`, max: "Max", buyAria: (name, c) => `Améliorer ${name} pour ${c} pièces`, maxAria: name => `${name} au maximum`,
+      startToast: n => `Niveau ${n}`, wonToast: `Bravo${NB}!`, shieldToast: `Bouclier${NB}!`,
+      sayStart: n => `Niveau ${n}. C’est parti${NB}!`, sayShield: "Ton bouclier t’a sauvé.", sayLost: p => `Une boule t’a touché. Tu es arrivé à ${p}${NB}% du niveau.`,
+      sayWon: (n, c) => `Niveau ${n} réussi. Tu as gagné ${c} pièces.`, sayBought: (name, l) => `${name}${NB}: ${l}.`
+    }
+  };
+  const pickLang = () => {
+    const saved = store.get("canonazo:idioma", null);
+    if (I18N[saved]) return saved;
+    for (const l of navigator.languages || [navigator.language || ""]) {
+      const b = String(l).slice(0, 2).toLowerCase();
+      if (I18N[b]) return b;
+    }
+    return "es";
+  };
+  let lang = pickLang();
+  const T = k => I18N[lang][k];
+  const fmtN = n => Math.round(n).toLocaleString(lang);
+  const fmtDec = n => (n < 10 ? n.toLocaleString(lang, { maximumFractionDigits: 1 }) : fmtN(n));
+  // Números de las bolas: 999, 1,2K, 34K, 1,5M…
+  function short(n) {
+    n = Math.ceil(n);
+    if (n < 1000) return String(n);
+    const units = [[1e9, "B"], [1e6, "M"], [1e3, "K"]];
+    for (const [v, u] of units) if (n >= v) { const x = n / v; return (x < 10 ? fmtDec(Math.floor(x * 10) / 10) : Math.floor(x)) + u; }
+    return String(n);
+  }
+
+  const $ = id => document.getElementById(id);
+  const canvas = $("game"), ctx = canvas.getContext("2d"), screenEl = $("screen"), toastEl = $("toast");
+  const reduceMotion = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+  const { W, H, GROUND } = Engine;
+  const PALETTE = [["#bfe0ff", "#3a9cff", "#0e57ad"], ["#c9f8d5", "#3ccf6a", "#11853a"], ["#fff6bf", "#ffd23b", "#c79200"], ["#ffe0b5", "#ff9a1f", "#c25c00"], ["#ffc4ca", "#ff4d5e", "#b8132b"], ["#ecd4ff", "#b25ff0", "#6a1fab"]];
+  const UP_ICONS = { power: "💥", rate: "⚡", barrels: "🔱", magnet: "🧲", shield: "🛡️" };
+
+  // Progreso guardado
+  function loadProg() {
+    const p = store.get("canonazo:progreso", null) || {}, up = Engine.freshUpgrades();
+    if (p.up && typeof p.up === "object") for (const k in up) {
+      const v = p.up[k] | 0;
+      if (v >= Engine.UPGRADES[k].start && v <= Engine.UPGRADES[k].max) up[k] = v;
+    }
+    return { level: Math.max(1, Math.min(999, p.level | 0 || 1)), coins: Math.max(0, Math.floor(+p.coins || 0)), up, best: Math.max(1, p.best | 0 || 1) };
+  }
+  const prog = loadProg();
+  const saveProg = () => store.set("canonazo:progreso", prog);
+
+  let S = null, phase = "shop", paused = false, lastResult = null;
+
+  // Sonido
+  let soundOn = store.get("canonazo:sonido", true) !== false, ac = null;
+  function audio() {
+    if (!soundOn) return null;
+    try {
+      if (!ac) { const A = window.AudioContext || window.webkitAudioContext; if (!A) return null; ac = new A(); }
+      if (ac.state === "suspended") ac.resume();
+    } catch (e) { ac = null; }
+    return ac;
+  }
+  function tone(f, dur, o) {
+    o = o || {};
+    const a = audio();
+    if (!a) return;
+    try {
+      const t0 = a.currentTime + (o.at || 0), osc = a.createOscillator(), g = a.createGain();
+      osc.type = o.type || "sine";
+      osc.frequency.setValueAtTime(f, t0);
+      if (o.to) osc.frequency.exponentialRampToValueAtTime(o.to, t0 + dur);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(o.vol || 0.05, t0 + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(g); g.connect(a.destination);
+      osc.start(t0); osc.stop(t0 + dur + 0.03);
+    } catch (e) {}
+  }
+  const lastSfx = {};
+  function sfx(name, n) {
+    if (!soundOn) return;
+    const now = performance.now(), gap = { shot: 90, hit: 60, coin: 70 }[name] || 0;
+    if (gap && now - (lastSfx[name] || 0) < gap) return;
+    lastSfx[name] = now;
+    if (name === "shot") tone(900, 0.03, { type: "square", vol: 0.008 });
+    else if (name === "hit") tone(520 + Math.random() * 60, 0.03, { type: "triangle", vol: 0.02 });
+    else if (name === "split") tone(300 + (5 - n) * 90, 0.16, { type: "triangle", vol: 0.06, to: 140 });
+    else if (name === "pop") tone(760, 0.12, { type: "triangle", vol: 0.05, to: 1300 });
+    else if (name === "coin") { tone(1320, 0.07, { type: "square", vol: 0.018 }); tone(1760, 0.09, { type: "square", vol: 0.016, at: 0.05 }); }
+    else if (name === "shield") tone(420, 0.35, { type: "sine", vol: 0.07, to: 1100 });
+    else if (name === "lost") { tone(300, 0.5, { type: "sawtooth", vol: 0.05, to: 60 }); tone(150, 0.5, { type: "square", vol: 0.03, at: 0.05, to: 40 }); }
+    else if (name === "won") [523, 659, 784, 1047].forEach((f, k) => tone(f, 0.22, { type: "triangle", vol: 0.06, at: k * 0.1 }));
+    else if (name === "buy") [660, 990].forEach((f, k) => tone(f, 0.1, { type: "triangle", vol: 0.05, at: k * 0.06 }));
+  }
+  const buzz = ms => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} };
+
+  function toast(text) {
+    toastEl.textContent = text;
+    toastEl.classList.remove("on"); void toastEl.offsetWidth; toastEl.classList.add("on");
+  }
+  let liveTimer = 0;
+  function announce(msg) {
+    const el = $("live");
+    clearTimeout(liveTimer);
+    el.textContent = "";
+    liveTimer = setTimeout(() => { el.textContent = msg; }, 60);
+  }
+
+  // Marcador
+  function renderHUD() {
+    const lvl = S && phase === "play" ? S.L : prog.level;
+    $("levelNum").textContent = lvl;
+    $("coins").textContent = fmtN(prog.coins + (S && phase === "play" ? S.earned : 0));
+    const pct = S && phase === "play" ? Math.min(100, Math.floor(S.done / S.total * 100)) : 0;
+    $("barFill").style.width = pct + "%";
+    $("bar").setAttribute("aria-valuenow", pct);
+    const sh = S && phase === "play" ? S.cannon.shields : prog.up.shield;
+    const box = $("shields");
+    if (box.childElementCount !== sh) box.innerHTML = '<svg viewBox="0 0 24 24"><use href="#shield"/></svg>'.repeat(sh);
+  }
+
+  // Pantallas (taller, pausa)
+  let screenBuilder = null;
+  const screenOpen = () => screenEl.classList.contains("on");
+  function showScreen(builder) {
+    screenBuilder = builder;
+    const m = builder();
+    $("sTitle").textContent = m.title;
+    $("sText").textContent = m.text || "";
+    $("sBody").innerHTML = m.body || "";
+    const box = $("sActions");
+    box.innerHTML = "";
+    m.actions.forEach(a => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "big" + (a.primary ? " primary" : "");
+      b.textContent = a.label;
+      b.onclick = a.fn;
+      box.append(b);
+    });
+    if (m.after) m.after();
+    screenEl.classList.add("on");
+    const keep = m.focus && screenEl.querySelector(m.focus);
+    (keep || box.querySelector(".primary") || box.querySelector("button")).focus({ preventScroll: true });
+  }
+  function hideScreen() {
+    screenEl.classList.remove("on");
+    screenBuilder = null;
+    canvas.focus({ preventScroll: true });
+  }
+  const coinIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#coin"/></svg>';
+  function effectValue(k, lvl) {
+    const st = Engine.stats({ ...prog.up, [k]: lvl });
+    if (k === "power") return fmtDec(Math.round(st.dmg * 10) / 10);
+    if (k === "rate") return fmtDec(Math.round(st.rate * 10) / 10);
+    if (k === "barrels") return lvl;
+    return lvl;
+  }
+  function shopHTML() {
+    return '<div class="shop">' + Object.keys(Engine.UPGRADES).map(k => {
+      const lvl = prog.up[k], c = Engine.cost(k, lvl), name = T("names")[k];
+      const label = c == null ? T("maxAria")(name) : T("buyAria")(name, fmtN(c));
+      const btn = c == null
+        ? `<button type="button" class="buy" disabled aria-label="${label}">${T("max")}</button>`
+        : `<button type="button" class="buy" data-k="${k}" aria-label="${label}"${c > prog.coins ? " disabled" : ""}>${coinIcon}${fmtN(c)}</button>`;
+      return `<div class="up"><span class="ico" aria-hidden="true">${UP_ICONS[k]}</span><span class="txt"><b>${name}</b><small>${T("effect")[k](effectValue(k, lvl))}</small></span>${btn}</div>`;
+    }).join("") + "</div>";
+  }
+  const shopScreen = () => {
+    const r = lastResult;
+    let title = T("shopTitle"), text = T("shopText"), stats = "";
+    if (r && r.won) {
+      title = T("winTitle")(r.level);
+      stats = `<div class="stats"><div class="stat"><b>${coinIcon}${fmtN(r.earned)}</b><span>${T("earned")}</span></div></div>`;
+    } else if (r) {
+      title = T("loseTitle");
+      text = T("loseText")(r.pct);
+      stats = `<div class="stats"><div class="stat"><b>${r.pct}${NB}%</b><span>${T("reached")}</span></div><div class="stat"><b>${coinIcon}${fmtN(r.earned)}</b><span>${T("earned")}</span></div></div>`;
+    }
+    return {
+      title, text, body: stats + shopHTML(),
+      actions: [{ label: r && !r.won && r.level === prog.level ? T("retry")(prog.level) : T("play")(prog.level), primary: true, fn: () => startLevel(prog.level) }],
+      after: () => screenEl.querySelectorAll(".buy[data-k]").forEach(b => { b.onclick = () => buy(b.dataset.k); })
+    };
+  };
+  function buy(k) {
+    const c = Engine.cost(k, prog.up[k]);
+    if (c == null || c > prog.coins) return;
+    prog.coins -= c;
+    prog.up[k]++;
+    saveProg();
+    sfx("buy");
+    announce(T("sayBought")(T("names")[k], T("effect")[k](effectValue(k, prog.up[k]))));
+    showScreen(shopScreen);
+    const again = screenEl.querySelector(`.buy[data-k="${k}"]:not(:disabled)`);
+    (again || screenEl.querySelector("#sActions .primary")).focus({ preventScroll: true });
+    renderHUD();
+  }
+  const pauseScreen = () => ({
+    title: T("pausedTitle"), text: T("pausedText"),
+    actions: [{ label: T("resume"), primary: true, fn: resume }, { label: T("quit"), fn: quitLevel }]
+  });
+
+  // Dibujo
+  let dpr = 1, scale = 1, colors = {}, bg = null, shake = 0;
+  function readColors() {
+    const cs = getComputedStyle(document.documentElement), v = n => cs.getPropertyValue(n).trim();
+    colors = { skyTop: v("--sky-top"), skyBottom: v("--sky-bottom"), hill: v("--hill"), ground: v("--ground"), groundEdge: v("--ground-edge") };
+    bg = null;
+  }
+  function resize() {
+    const r = canvas.getBoundingClientRect();
+    if (!r.width) return;
+    dpr = Math.min(3, window.devicePixelRatio || 1);
+    canvas.width = Math.round(r.width * dpr);
+    canvas.height = Math.round(r.height * dpr);
+    scale = canvas.width / W;
+    bg = null;
+  }
+  function background() {
+    if (bg && bg.width === canvas.width && bg.height === canvas.height) return bg;
+    bg = document.createElement("canvas");
+    bg.width = canvas.width; bg.height = canvas.height;
+    const g = bg.getContext("2d");
+    g.setTransform(scale, 0, 0, scale, 0, 0);
+    const sky = g.createLinearGradient(0, 0, 0, GROUND);
+    sky.addColorStop(0, colors.skyTop); sky.addColorStop(1, colors.skyBottom);
+    g.fillStyle = sky; g.fillRect(0, 0, W, GROUND);
+    g.fillStyle = colors.hill;
+    [[60, GROUND + 30, 140, 90], [230, GROUND + 40, 170, 115], [370, GROUND + 30, 120, 80]].forEach(([x, y, rx, ry]) => { g.beginPath(); g.ellipse(x, y, rx, ry, 0, Math.PI, 0); g.fill(); });
+    g.fillStyle = colors.ground; g.fillRect(0, GROUND, W, H - GROUND);
+    g.fillStyle = colors.groundEdge; g.fillRect(0, GROUND, W, 5);
+    return bg;
+  }
+  function rr(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function ballColor(b) {
+    const ratio = b.hp / Engine.baseHP(S.L);
+    return PALETTE[ratio < 0.25 ? 0 : ratio < 0.5 ? 1 : ratio < 0.8 ? 2 : ratio < 1.1 ? 3 : ratio < 1.4 ? 4 : 5];
+  }
+  function drawBall(b) {
+    const [light, base, dark] = ballColor(b);
+    const g = ctx.createRadialGradient(b.x - b.r * 0.35, b.y - b.r * 0.4, b.r * 0.1, b.x, b.y, b.r);
+    g.addColorStop(0, light); g.addColorStop(0.55, base); g.addColorStop(1, dark);
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+    ctx.fillStyle = g; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = dark; ctx.stroke();
+    if (b.flash > 0) { ctx.fillStyle = "rgba(255,255,255,.5)"; ctx.fill(); }
+    ctx.fillStyle = "rgba(255,255,255,.55)";
+    ctx.beginPath(); ctx.ellipse(b.x - b.r * 0.38, b.y - b.r * 0.45, b.r * 0.28, b.r * 0.16, -0.6, 0, Math.PI * 2); ctx.fill();
+    const txt = short(b.hp), size = Math.max(11, b.r * (txt.length > 3 ? 0.62 : txt.length > 2 ? 0.72 : 0.85));
+    ctx.font = `800 ${size}px "Baloo 2", ui-rounded, system-ui, sans-serif`;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineJoin = "round";
+    ctx.lineWidth = Math.max(2.5, size * 0.2); ctx.strokeStyle = dark;
+    ctx.strokeText(txt, b.x, b.y + size * 0.08);
+    ctx.fillStyle = "#fff"; ctx.fillText(txt, b.x, b.y + size * 0.08);
+  }
+  function drawCannon() {
+    const c = S && phase !== "shop" ? S.cannon : { x: W / 2, inv: 0, kick: 0 };
+    const n = S && phase !== "shop" ? S.st.barrels : prog.up.barrels;
+    const offs = n === 1 ? [0] : n === 2 ? [-7, 7] : [-11, 0, 11];
+    ctx.save();
+    if (c.inv > 0 && Math.floor(c.inv * 10) % 2 === 0) ctx.globalAlpha = 0.45;
+    const x = c.x, k = c.kick > 0 ? 3 : 0;
+    for (const o of offs) {
+      rr(x + o - 6, GROUND - 46 + k, 12, 26, 5); ctx.fillStyle = "#3b3a5c"; ctx.fill();
+      rr(x + o - 6, GROUND - 46 + k, 12, 6, 3); ctx.fillStyle = "#ff6a3d"; ctx.fill();
+    }
+    rr(x - 20, GROUND - 30, 40, 21, 9); ctx.fillStyle = "#ff6a3d"; ctx.fill();
+    rr(x - 15, GROUND - 27, 22, 5, 2.5); ctx.fillStyle = "rgba(255,255,255,.45)"; ctx.fill();
+    for (const wx of [x - 12, x + 12]) {
+      ctx.beginPath(); ctx.arc(wx, GROUND - 8, 8.5, 0, Math.PI * 2); ctx.fillStyle = "#2b2851"; ctx.fill();
+      ctx.beginPath(); ctx.arc(wx, GROUND - 8, 3.4, 0, Math.PI * 2); ctx.fillStyle = "#c9c6e8"; ctx.fill();
+    }
+    ctx.restore();
+    if (c.inv > 0) {
+      ctx.beginPath(); ctx.arc(x, GROUND - 24, 34, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(58,156,255,.16)"; ctx.fill();
+      ctx.lineWidth = 2.5; ctx.strokeStyle = "rgba(58,156,255,.7)"; ctx.stroke();
+    }
+  }
+  function drawCoin(k) {
+    ctx.save();
+    if (k.ground && k.life < 1.2) ctx.globalAlpha = Math.max(0, k.life / 1.2);
+    ctx.beginPath(); ctx.arc(k.x, k.y, 7, 0, Math.PI * 2); ctx.fillStyle = "#b07c00"; ctx.fill();
+    ctx.beginPath(); ctx.arc(k.x, k.y, 6, 0, Math.PI * 2); ctx.fillStyle = "#ffc83d"; ctx.fill();
+    ctx.beginPath(); ctx.arc(k.x - 1.8, k.y - 2, 2, 0, Math.PI * 2); ctx.fillStyle = "#fff3b0"; ctx.fill();
+    ctx.restore();
+  }
+
+  // Partículas (solo decoración)
+  const parts = [];
+  function burst(x, y, n, speed) {
+    if (reduceMotion) n = Math.ceil(n / 3);
+    const cols = ["#ffd23b", "#ff9a1f", "#ffffff", "#ff6a3d"];
+    for (let i = 0; i < n && parts.length < 320; i++) {
+      const a = Math.random() * Math.PI * 2, sp = speed * (0.4 + Math.random() * 0.8);
+      parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - speed * 0.3, life: 0.4 + Math.random() * 0.4, max: 0.8, r: 1.5 + Math.random() * 2.5, c: cols[i % cols.length] });
+    }
+  }
+  function stepParts(dt) {
+    for (const p of parts) { p.vy += 700 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; }
+    for (let i = parts.length - 1; i >= 0; i--) if (parts[i].life <= 0) parts.splice(i, 1);
+  }
+
+  function draw() {
+    if (!canvas.width) return;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(background(), 0, 0);
+    const amp = shake > 0 ? 7 * shake / 0.35 : 0;
+    ctx.setTransform(scale, 0, 0, scale, (Math.random() - 0.5) * amp * scale, (Math.random() - 0.5) * amp * scale);
+    if (S && phase !== "shop") {
+      S.coins.forEach(drawCoin);
+      ctx.fillStyle = "#ffd23b";
+      for (const u of S.bullets) { rr(u.x - 2, u.y - 7, 4, 12, 2); ctx.fill(); }
+      S.balls.forEach(drawBall);
+    }
+    drawCannon();
+    for (const p of parts) {
+      ctx.globalAlpha = Math.max(0, p.life / p.max);
+      ctx.fillStyle = p.c;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // Sucesos del motor: sonidos y efectos
+  function handleEvents() {
+    for (const e of S.events) {
+      if (e.t === "shot") sfx("shot");
+      else if (e.t === "hit") sfx("hit");
+      else if (e.t === "split" || e.t === "pop") { burst(e.x, e.y, 6 + e.tier * 4, 90 + e.r * 4); sfx(e.t, e.tier); }
+      else if (e.t === "coin") sfx("coin");
+      else if (e.t === "shield") { sfx("shield"); toast(T("shieldToast")); announce(T("sayShield")); buzz(40); }
+      else if (e.t === "lost") { sfx("lost"); buzz(150); shake = reduceMotion ? 0 : 0.35; burst(S.cannon.x, GROUND - 25, 36, 260); }
+      else if (e.t === "won") { sfx("won"); toast(T("wonToast")); }
+    }
+    S.events.length = 0;
+  }
+
+  // Bucle de juego con pasos fijos
+  const STEP = 1 / 120;
+  let last = 0, acc = 0, endTimer = 0;
+  function frame(ts) {
+    const dt = Math.min(0.05, last ? (ts - last) / 1000 : 0);
+    last = ts;
+    if (S && phase === "play" && !paused) {
+      acc += dt;
+      let n = 0;
+      while (acc >= STEP && n < 12) { Engine.step(S, STEP, inputNow()); acc -= STEP; n++; }
+      if (n >= 12) acc = 0;
+      handleEvents();
+      if (S.state === "lost") { phase = "ending"; endTimer = 1; }
+      else if (S.finished) { phase = "ending"; endTimer = 0.3; }
+    } else if (phase === "ending") {
+      endTimer -= dt;
+      if (endTimer <= 0) finishLevel();
+    }
+    stepParts(dt);
+    shake = Math.max(0, shake - dt);
+    draw();
+    renderHUD();
+    requestAnimationFrame(frame);
+  }
+
+  function startLevel(L) {
+    audio();
+    S = Engine.create(L, prog.up);
+    phase = "play"; paused = false; acc = 0; parts.length = 0; lastResult = null; target = null; drag = null;
+    hideScreen();
+    toast(T("startToast")(L));
+    announce(T("sayStart")(L));
+  }
+  function finishLevel() {
+    const won = S.finished && S.state !== "lost", L = S.L, earned = S.earned;
+    const pct = Math.min(100, Math.floor(S.done / S.total * 100));
+    prog.coins += earned;
+    if (won) { prog.level = L + 1; prog.best = Math.max(prog.best, L + 1); announce(T("sayWon")(L, fmtN(earned))); }
+    else announce(T("sayLost")(pct));
+    saveProg();
+    lastResult = { won, level: L, earned, pct };
+    phase = "shop";
+    showScreen(shopScreen);
+  }
+  function pause() {
+    if (phase !== "play" || paused) return;
+    paused = true;
+    keys.clear();
+    showScreen(pauseScreen);
+  }
+  function resume() {
+    if (!paused) return;
+    paused = false;
+    hideScreen();
+  }
+  function quitLevel() {
+    if (S) prog.coins += S.earned;
+    saveProg();
+    S = null; paused = false; phase = "shop"; lastResult = null;
+    showScreen(shopScreen);
+  }
+
+  // Controles: el ratón sigue al puntero; con el dedo se arrastra desde cualquier sitio.
+  let target = null, drag = null;
+  const keys = new Set();
+  const worldX = e => { const r = canvas.getBoundingClientRect(); return (e.clientX - r.left) / r.width * W; };
+  function inputNow() {
+    const dir = (keys.has("r") ? 1 : 0) - (keys.has("l") ? 1 : 0);
+    if (dir) { target = null; return { dir }; }
+    return { target };
+  }
+  canvas.addEventListener("pointerdown", e => {
+    audio();
+    if (phase !== "play" || paused || !S) return;
+    if (e.pointerType === "mouse") { target = worldX(e); return; }
+    drag = { id: e.pointerId, x0: worldX(e), c0: S.cannon.x };
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  canvas.addEventListener("pointermove", e => {
+    if (phase !== "play" || paused || !S) return;
+    if (e.pointerType === "mouse") { target = worldX(e); return; }
+    if (drag && e.pointerId === drag.id) target = Math.max(22, Math.min(W - 22, drag.c0 + (worldX(e) - drag.x0) * 1.25));
+  });
+  const endDrag = e => { if (drag && e.pointerId === drag.id) drag = null; };
+  canvas.addEventListener("pointerup", endDrag);
+  canvas.addEventListener("pointercancel", endDrag);
+  window.addEventListener("keydown", e => {
+    const k = e.key.toLowerCase();
+    if ((k === "p" || k === "escape") && phase === "play") { e.preventDefault(); if (paused) resume(); else pause(); return; }
+    if (phase !== "play" || paused) return;
+    if (k === "arrowleft" || k === "a") { keys.add("l"); e.preventDefault(); }
+    else if (k === "arrowright" || k === "d") { keys.add("r"); e.preventDefault(); }
+  });
+  window.addEventListener("keyup", e => {
+    const k = e.key.toLowerCase();
+    if (k === "arrowleft" || k === "a") keys.delete("l");
+    else if (k === "arrowright" || k === "d") keys.delete("r");
+  });
+  window.addEventListener("blur", () => keys.clear());
+  document.addEventListener("visibilitychange", () => { if (document.hidden) pause(); });
+
+  // Botones e idioma
+  $("pauseBtn").onclick = () => { if (paused) resume(); else pause(); };
+  const soundBtn = $("soundBtn");
+  const renderSound = () => soundBtn.setAttribute("aria-pressed", String(soundOn));
+  soundBtn.onclick = () => { soundOn = !soundOn; store.set("canonazo:sonido", soundOn); renderSound(); if (soundOn) sfx("buy"); };
+  function applyLang() {
+    document.documentElement.lang = lang;
+    document.title = T("doc");
+    document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = T(el.dataset.i18n); });
+    document.querySelectorAll("[data-i18n-aria]").forEach(el => el.setAttribute("aria-label", T(el.dataset.i18nAria)));
+    document.querySelectorAll("[data-lang]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    if (screenBuilder && screenOpen()) showScreen(screenBuilder);
+    renderHUD();
+  }
+  document.querySelectorAll("[data-lang]").forEach(b => {
+    b.onclick = () => { lang = b.dataset.lang; store.set("canonazo:idioma", lang); applyLang(); };
+  });
+
+  readColors();
+  resize();
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas); else window.addEventListener("resize", resize);
+  if (window.matchMedia) {
+    const mq = matchMedia("(prefers-color-scheme: dark)");
+    if (mq.addEventListener) mq.addEventListener("change", readColors);
+  }
+  renderSound();
+  applyLang();
+  showScreen(shopScreen);
+  requestAnimationFrame(frame);
+
+  // Para pruebas automáticas desde el navegador.
+  window.__canonazo = { Engine, get state() { return { S, phase, paused, prog }; }, start: startLevel };
+  // </interfaz>
+})();
+</script>
+</body>
+</html>
