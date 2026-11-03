@@ -1,0 +1,10 @@
+# Publicación en Render como sitio estático (https://render.com/docs/blueprint-spec).
+# En Render: New → Blueprint → elegir este repositorio.
+# La raíz del repositorio es el sitio: index.html es el menú y cada juego vive en su carpeta.
+services:
+  - type: web
+    runtime: static
+    name: juegos
+    branch: main
+    buildCommand: "true" # No hay nada que compilar.
+    staticPublishPath: .
