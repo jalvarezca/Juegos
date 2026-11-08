@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pulso Neón</title>
+<meta name="description" content="Salta al ritmo de la música: seis niveles, modo infinito y cinco modos de juego.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Concepto: una máquina recreativa de neón. El canvas siempre está vivo detrás de paneles de vidrio oscuro;
+   el menú se alinea a la izquierda para dejar ver la partida de demostración. */
+:root {
+  --ink: #07051a;
+  --ink-2: #0f0b29;
+  --glass: rgba(13, 9, 34, 0.8);
+  --edge: rgba(170, 150, 255, 0.26);
+  --text: #f3efff;
+  --muted: #aaa4cf;
+  --pulse: #ff3fb4;
+  --volt: #3ff0ff;
+  --gold: #ffd25c;
+  --go: #7dff6b;
+  --display: "Bungee", "Arial Black", Impact, sans-serif;
+  --ui: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
+  --beat: 0.5s;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { margin: 0; background: var(--ink); color: var(--text); font-family: var(--ui); font-size: 15px; overflow: hidden; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; }
+#app { position: fixed; inset: 0; overflow: hidden; touch-action: none; background: var(--ink); }
+#game { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#playLayer { position: absolute; inset: 0; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; touch-action: manipulation; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--volt); outline-offset: 3px; }
+[hidden] { display: none !important; }
+
+.screen { position: absolute; inset: 0; display: flex; flex-direction: column; box-sizing: border-box;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: max(14px, env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-bottom, 0px)); }
+.shade-left { background: linear-gradient(90deg, rgba(7, 5, 26, 0.92) 0%, rgba(7, 5, 26, 0.72) 38%, rgba(7, 5, 26, 0.05) 72%); }
+.shade-full { background: rgba(7, 5, 26, 0.6); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+
+/* ---------- portada ---------- */
+#scrTitle { justify-content: center; gap: clamp(14px, 3.4vh, 30px); padding-left: max(clamp(20px, 6vw, 88px), env(safe-area-inset-left, 0px)); }
+.logo { margin: 0; font-family: var(--display); font-weight: 400; line-height: 0.86; letter-spacing: 0.01em; font-size: clamp(46px, min(11vw, 17vh), 150px); display: flex; flex-direction: column; }
+.logo .l1 { color: #fff; text-shadow: 0 0 6px rgba(255, 63, 180, 0.9), 0 0 22px rgba(255, 63, 180, 0.65), 0 0 60px rgba(255, 63, 180, 0.35); }
+.logo .l2 { color: transparent; -webkit-text-stroke: max(2px, 0.022em) var(--volt); text-shadow: 0 0 10px rgba(63, 240, 255, 0.75), 0 0 34px rgba(63, 240, 255, 0.4); animation: flick 7s infinite; }
+@keyframes flick { 0%, 91%, 93.5%, 100% { opacity: 1; } 92%, 93% { opacity: 0.45; } }
+.tag { margin: 0; max-width: 34ch; font-size: clamp(14px, 2.2vh, 18px); color: var(--muted); line-height: 1.45; text-wrap: balance; }
+.tag b { color: var(--text); font-weight: 600; }
+.title-actions { display: flex; align-items: center; gap: clamp(14px, 2.4vw, 26px); }
+.btn-play { width: clamp(72px, 13vh, 112px); aspect-ratio: 1; max-width: 100%; position: relative; display: grid; place-items: center; }
+.btn-play::before { content: ""; position: absolute; inset: 14%; transform: rotate(45deg); border-radius: 14%; background: linear-gradient(135deg, #ff6fcb, var(--pulse) 45%, #b4187a);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85), 0 0 28px rgba(255, 63, 180, 0.8), inset 0 -8px 16px rgba(0, 0, 0, 0.25); animation: thump var(--beat) ease-out infinite; }
+.btn-play svg { position: relative; width: 34%; height: 34%; margin-left: 6%; fill: #fff; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35)); }
+.btn-play:hover::before { filter: brightness(1.15); }
+.btn-play:focus-visible { outline: none; }
+.btn-play:focus-visible::before { box-shadow: 0 0 0 3px #fff, 0 0 0 7px var(--volt), 0 0 30px rgba(255, 63, 180, 0.8); }
+@keyframes thump { 0% { transform: rotate(45deg) scale(1.07); } 35%, 100% { transform: rotate(45deg) scale(1); } }
+.btn-round { width: clamp(50px, 8.5vh, 64px); aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; background: var(--glass); border: 1.5px solid var(--edge); box-shadow: 0 0 18px rgba(63, 240, 255, 0.12); }
+.btn-round svg { width: 46%; height: 46%; stroke: var(--volt); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.btn-round:hover { border-color: var(--volt); }
+.back { position: absolute; top: max(12px, env(safe-area-inset-top, 0px)); left: max(16px, env(safe-area-inset-left, 0px)); display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px 0 8px; border-radius: 10px;
+  color: var(--muted); font-weight: 600; font-size: 13px; letter-spacing: 0.04em; text-decoration: none; background: var(--glass); border: 1px solid var(--edge); }
+.back:hover { color: var(--text); border-color: var(--volt); }
+.back svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.how { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); }
+.how kbd { font-family: var(--ui); font-weight: 600; font-size: 12px; color: var(--text); padding: 1px 7px; border-radius: 5px; border: 1px solid var(--edge); background: rgba(255, 255, 255, 0.05); }
+.free { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: max(14px, env(safe-area-inset-bottom, 0px)); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); opacity: 0.85; }
+
+/* ---------- barras de pantalla ---------- */
+.bar { display: flex; align-items: center; gap: 14px; min-height: 44px; }
+.bar h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(18px, 3.2vh, 26px); letter-spacing: 0.02em; }
+.bar .aside { margin-left: auto; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+.btn-back { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px 0 10px; border-radius: 10px; background: var(--glass); border: 1px solid var(--edge); font-weight: 600; font-size: 14px; letter-spacing: 0.04em; }
+.btn-back svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- selector de niveles ---------- */
+#scrLevels { gap: 10px; }
+.carousel { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; gap: clamp(8px, 2vw, 24px); }
+.nav { flex: 0 0 auto; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: var(--glass); border: 1px solid var(--edge); }
+.nav svg { width: 22px; height: 22px; stroke: var(--text); fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.nav:hover { border-color: var(--volt); }
+.lvcard { --lv-a: var(--volt); --lv-b: #1b2a6b; --lv-c: var(--pulse); position: relative; width: min(640px, 100%); min-width: 0; box-sizing: border-box; max-height: 100%; overflow: hidden;
+  display: grid; grid-template-columns: auto 1fr; grid-template-areas: "num head" "num meta" "bars bars" "foot foot"; column-gap: clamp(14px, 2.6vw, 26px); row-gap: clamp(8px, 1.8vh, 14px);
+  padding: clamp(14px, 3vh, 26px) clamp(16px, 3vw, 30px); border-radius: 22px; background: linear-gradient(150deg, color-mix(in srgb, var(--lv-b) 55%, transparent), rgba(10, 7, 28, 0.92) 60%);
+  border: 1.5px solid color-mix(in srgb, var(--lv-a) 55%, transparent); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 0 46px color-mix(in srgb, var(--lv-a) 28%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.08); touch-action: pan-y; }
+.lvcard.swap { animation: cardin 0.32s cubic-bezier(.2, .9, .3, 1.2); }
+@keyframes cardin { from { transform: translateY(10px) scale(0.98); opacity: 0.4; } to { transform: none; opacity: 1; } }
+.lv-num { grid-area: num; align-self: start; font-family: var(--display); font-size: clamp(48px, 13vh, 104px); line-height: 0.85; color: transparent; -webkit-text-stroke: 2px var(--lv-a); text-shadow: 0 0 22px color-mix(in srgb, var(--lv-a) 45%, transparent); }
+.lv-head { grid-area: head; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.lv-diffrow { display: flex; align-items: center; gap: 12px; }
+.lv-diff { font-weight: 700; font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; }
+.eq { display: inline-flex; align-items: flex-end; gap: 3px; height: 18px; }
+.eq i { width: 5px; border-radius: 2px; background: rgba(255, 255, 255, 0.14); }
+.lv-name { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(22px, 4.6vh, 38px); line-height: 1.02; text-wrap: balance; overflow-wrap: anywhere; }
+.lv-meta { grid-area: meta; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.lv-meta p { margin: 0; color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px 3px 7px; border-radius: 999px; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); }
+.chip::before { content: ""; width: 8px; height: 8px; border-radius: 2px; transform: rotate(45deg); background: var(--c); box-shadow: 0 0 8px var(--c); }
+.lv-bars { grid-area: bars; display: grid; gap: 7px; }
+.pbar-row { display: grid; grid-template-columns: 74px 1fr 46px; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+.pbar-row b { color: var(--text); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.track { height: 9px; border-radius: 9px; background: rgba(255, 255, 255, 0.08); overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06); }
+.track i { display: block; height: 100%; transform-origin: 0 50%; transform: scaleX(0); border-radius: inherit; background: linear-gradient(90deg, var(--lv-a), color-mix(in srgb, var(--lv-a) 50%, #fff)); box-shadow: 0 0 12px var(--lv-a); transition: transform 0.4s; }
+.track.prac i { background: linear-gradient(90deg, var(--go), #c8ffbf); box-shadow: 0 0 12px var(--go); }
+.lv-foot { grid-area: foot; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.coins { display: inline-flex; gap: 6px; margin-right: auto; }
+.coins i { width: 20px; height: 20px; border-radius: 50%; border: 2px dashed rgba(255, 210, 92, 0.45); box-sizing: border-box; }
+.coins i.got { border: 2px solid #7a4300; background: radial-gradient(circle at 35% 35%, #fff6c9, #ffc93d 60%, #c47a10); box-shadow: 0 0 10px rgba(255, 210, 92, 0.7); }
+.record { margin-right: auto; font-size: 14px; color: var(--muted); }
+.record b { font-family: var(--display); font-weight: 400; font-size: 20px; color: var(--gold); margin-left: 6px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 0 20px; border-radius: 12px; font-weight: 700; font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.16); }
+.btn:hover { background: rgba(255, 255, 255, 0.12); }
+.btn.primary { color: #13001a; background: linear-gradient(180deg, #ff7fd0, var(--pulse)); border-color: transparent; box-shadow: 0 0 22px rgba(255, 63, 180, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.5); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.ghost { min-height: 40px; padding: 0 12px; font-size: 12px; background: transparent; border-color: rgba(255, 255, 255, 0.14); color: var(--muted); }
+.btn.go { color: #032000; background: linear-gradient(180deg, #b6ffab, var(--go)); border-color: transparent; box-shadow: 0 0 18px rgba(125, 255, 107, 0.35); }
+.dots { display: flex; justify-content: center; gap: 4px; }
+.dot { width: 26px; height: 26px; display: grid; place-items: center; }
+.dot::after { content: ""; width: 9px; height: 9px; border-radius: 2px; transform: rotate(45deg); background: rgba(255, 255, 255, 0.22); transition: background 0.2s; }
+.dot.on::after { background: var(--volt); box-shadow: 0 0 10px var(--volt); }
+
+/* ---------- personalizar y ajustes ---------- */
+.panel-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; -webkit-user-select: none; }
+.icons-layout { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(14px, 3vw, 34px); align-items: start; max-width: 980px; margin: 0 auto; padding-block: 6px 10px; }
+.preview { position: sticky; top: 0; border-radius: 20px; background: radial-gradient(circle at 50% 38%, rgba(63, 240, 255, 0.08), rgba(10, 7, 28, 0.85) 70%); border: 1px solid var(--edge); aspect-ratio: 1.15; max-width: 100%; }
+.preview canvas { width: 100%; height: 100%; display: block; }
+.pickers { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.pickers h3 { margin: 6px 0 0; font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+.designs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.design { aspect-ratio: 1; max-width: 100%; border-radius: 12px; background: rgba(255, 255, 255, 0.05); border: 1.5px solid rgba(255, 255, 255, 0.1); display: grid; place-items: center; }
+.design canvas { width: 82%; height: 82%; }
+.design.on { border-color: var(--volt); box-shadow: 0 0 14px rgba(63, 240, 255, 0.45); background: rgba(63, 240, 255, 0.08); }
+.swatches { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 6px; }
+.sw { aspect-ratio: 1; max-width: 100%; border-radius: 8px; background: var(--c); border: 2px solid rgba(0, 0, 0, 0.5); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25); }
+.sw.on { box-shadow: 0 0 0 2px var(--ink), 0 0 0 4px #fff, 0 0 14px var(--c); }
+.toggle { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; padding: 8px 0; }
+.toggle input { width: 20px; height: 20px; accent-color: var(--volt); }
+.settings { width: min(560px, 100%); margin: 0 auto; display: flex; flex-direction: column; gap: 14px; padding-block: 6px 10px; }
+.field { display: grid; grid-template-columns: 120px 1fr; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 14px; background: var(--glass); border: 1px solid var(--edge); font-weight: 600; font-size: 14px; }
+.field input[type=range] { width: 100%; accent-color: var(--pulse); }
+.field select { font: inherit; font-weight: 500; color: var(--text); background: var(--ink-2); border: 1px solid var(--edge); border-radius: 8px; padding: 6px 10px; }
+.keys { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; padding: 14px 16px; border-radius: 14px; border: 1px dashed var(--edge); font-size: 13px; color: var(--muted); }
+.keys dt { color: var(--text); font-weight: 600; }
+.keys dd { margin: 0; }
+.danger { display: flex; align-items: center; gap: 12px; }
+.danger .btn { color: #ff8fa3; border-color: rgba(255, 77, 109, 0.4); }
+
+/* ---------- HUD ---------- */
+#hud { position: absolute; inset: 0; pointer-events: none; }
+.progress { position: absolute; top: max(12px, env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); width: min(46%, 520px); display: flex; align-items: center; gap: 10px; }
+.progress .track { flex: 1; height: 10px; --lv-a: #ffffff; background: rgba(0, 0, 0, 0.35); }
+.progress .track i { transition: none; background: linear-gradient(90deg, #8ff6ff, #fff); box-shadow: 0 0 10px rgba(143, 246, 255, 0.8); }
+#ptext { min-width: 44px; font-family: var(--display); font-size: 15px; text-shadow: 0 0 10px rgba(0, 0, 0, 0.8); font-variant-numeric: tabular-nums; }
+#hud.endless .track { display: none; }
+#hud.watch .progress::before { content: "DEMO"; font-family: var(--display); font-size: 12px; letter-spacing: 0.1em; color: #13001a; background: var(--gold); padding: 2px 8px; border-radius: 6px; }
+#hud.endless .progress { justify-content: center; }
+.hud-btn { pointer-events: auto; position: absolute; top: max(8px, env(safe-area-inset-top, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; background: rgba(7, 5, 26, 0.45); border: 1px solid rgba(255, 255, 255, 0.18); }
+.hud-btn svg { width: 18px; height: 18px; fill: #fff; }
+.practice-ctl { pointer-events: auto; position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); bottom: max(12px, env(safe-area-inset-bottom, 0px)); display: flex; gap: 10px; }
+.practice-ctl button { width: 54px; height: 54px; border-radius: 14px; display: grid; place-items: center; background: rgba(7, 5, 26, 0.5); border: 1.5px solid rgba(125, 255, 107, 0.55); }
+.practice-ctl svg { width: 26px; height: 26px; }
+#toast { position: absolute; top: calc(max(12px, env(safe-area-inset-top, 0px)) + 34px); left: 50%; transform: translate(-50%, -6px); max-width: min(90%, 560px); text-align: center; padding: 8px 16px; border-radius: 10px; background: rgba(7, 5, 26, 0.72); border: 1px solid var(--edge); font-weight: 600; font-size: 14px; opacity: 0; transition: opacity 0.25s, transform 0.25s; }
+#toast.on { opacity: 1; transform: translate(-50%, 0); }
+#fps { position: absolute; right: max(12px, env(safe-area-inset-right, 0px)); bottom: max(10px, env(safe-area-inset-bottom, 0px)); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* ---------- pausa y victoria ---------- */
+.overlay { align-items: center; justify-content: center; }
+.dialog { width: min(440px, 100%); min-width: 0; box-sizing: border-box; max-height: 100%; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding: clamp(16px, 3.4vh, 26px); border-radius: 22px; background: rgba(12, 8, 32, 0.9); border: 1.5px solid var(--edge); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(63, 240, 255, 0.12); }
+.dialog h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(20px, 3.6vh, 28px); line-height: 1.05; text-wrap: balance; }
+.dialog .eyebrow { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+.stack { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stack .wide { grid-column: 1 / -1; }
+.vols { display: grid; gap: 8px; }
+.vols label { display: grid; grid-template-columns: 70px 1fr; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+.vols input { width: 100%; accent-color: var(--pulse); }
+.win h2 { font-size: clamp(24px, 5vh, 38px); color: #fff; text-shadow: 0 0 18px rgba(125, 255, 107, 0.8); }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0; }
+.stats div { padding: 10px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.08); }
+.stats dt { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.stats dd { margin: 2px 0 0; font-family: var(--display); font-size: 22px; font-variant-numeric: tabular-nums; }
+.wcoins { display: flex; gap: 10px; }
+.wcoins i { width: 34px; height: 34px; border-radius: 50%; border: 2px dashed rgba(255, 210, 92, 0.45); box-sizing: border-box; }
+.wcoins i.got { border: 2px solid #7a4300; background: radial-gradient(circle at 35% 35%, #fff6c9, #ffc93d 60%, #c47a10); box-shadow: 0 0 14px rgba(255, 210, 92, 0.8); }
+.wcoins i.new { animation: pop 0.5s both cubic-bezier(.2, 1.6, .4, 1); }
+@keyframes pop { from { transform: scale(0.2); opacity: 0; } to { transform: none; opacity: 1; } }
+.note { margin: 0; font-size: 13px; color: var(--muted); }
+
+/* ---------- pantallas pequeñas ---------- */
+@media (max-height: 460px) {
+  .lvcard { grid-template-areas: "num head" "num meta" "bars bars" "foot foot"; row-gap: 6px; }
+  .lv-meta p { font-size: 13px; }
+  .btn { min-height: 40px; }
+  .how { display: none; }
+}
+@media (max-width: 760px) {
+  .icons-layout { grid-template-columns: 1fr; }
+  .preview { position: relative; aspect-ratio: 2; }
+  .designs { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .swatches { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .nav { width: 38px; height: 38px; }
+  .field { grid-template-columns: 1fr; gap: 8px; }
+  #scrTitle { padding-left: max(20px, env(safe-area-inset-left, 0px)); }
+}
+@media (max-width: 520px) {
+  .carousel .nav { display: none; }
+  .stack { grid-template-columns: 1fr; }
+  .progress { width: 58%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-play::before, .logo .l2, .lvcard.swap, .wcoins i.new { animation: none; }
+  #toast, .track i { transition: none; }
+}
+</style>
+</head>
+<body>
+<div id="app" data-screen="title">
+  <canvas id="game" aria-label="Pantalla de juego"></canvas>
+  <div id="playLayer"></div>
+
+  <section id="scrTitle" class="screen shade-left" aria-label="Portada">
+    <a class="back" href="../"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Volver al menú</a>
+    <h1 class="logo"><span class="l1">PULSO</span><span class="l2">NEÓN</span></h1>
+    <p class="tag">Un juego de saltos al ritmo de la música. <b>Seis niveles y modo infinito, todo desbloqueado.</b></p>
+    <div class="title-actions">
+      <button id="btnIcons" class="btn-round" aria-label="Personalizar icono" title="Personalizar">
+        <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+      </button>
+      <button id="btnPlay" class="btn-play" aria-label="Jugar"><svg viewBox="0 0 24 24"><path d="M6 3.5v17L21 12z"/></svg></button>
+      <button id="btnSettings" class="btn-round" aria-label="Ajustes" title="Ajustes">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg>
+      </button>
+    </div>
+    <div class="how"><span><kbd>Espacio</kbd> <kbd>↑</kbd> clic o toque: saltar</span><span>Mantén pulsado para saltar seguido</span><span><kbd>Esc</kbd> pausa</span></div>
+    <p class="free">Gratis · sin versión de pago</p>
+  </section>
+
+  <section id="scrLevels" class="screen shade-full" aria-label="Elegir nivel" hidden>
+    <header class="bar">
+      <button id="lvBack" class="btn-back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Volver</button>
+      <h2>Niveles</h2>
+      <span class="aside" id="lvTotals"></span>
+    </header>
+    <div class="carousel">
+      <button id="lvPrev" class="nav" aria-label="Nivel anterior"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <article class="lvcard" id="lvCard">
+        <div class="lv-num" id="lvIdx" aria-hidden="true">01</div>
+        <div class="lv-head">
+          <div class="lv-diffrow"><span class="lv-diff" id="lvDiff">Fácil</span><span class="eq" id="lvEq" role="img"></span></div>
+          <h3 class="lv-name" id="lvName">Primer Pulso</h3>
+        </div>
+        <div class="lv-meta"><p id="lvMeta"></p><div class="chips" id="lvModes"></div></div>
+        <div class="lv-bars" id="lvBars">
+          <div class="pbar-row"><span>Normal</span><div class="track"><i id="lvNormFill"></i></div><b id="lvNormPct">0%</b></div>
+          <div class="pbar-row"><span>Práctica</span><div class="track prac"><i id="lvPracFill"></i></div><b id="lvPracPct">0%</b></div>
+        </div>
+        <div class="lv-foot">
+          <span class="coins" id="lvCoins" role="img"></span>
+          <span class="record" id="lvEndless" hidden>Récord<b id="lvRecord">0 m</b></span>
+          <button id="lvDemo" class="btn ghost" title="Ver cómo se completa">Ver demo</button>
+          <button id="lvPractice" class="btn go">Práctica</button>
+          <button id="lvGo" class="btn primary">Jugar</button>
+        </div>
+      </article>
+      <button id="lvNext" class="nav" aria-label="Nivel siguiente"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+    </div>
+    <nav class="dots" id="lvDots" aria-label="Niveles"></nav>
+  </section>
+
+  <section id="scrIcons" class="screen shade-full" aria-label="Personalizar" hidden>
+    <header class="bar">
+      <button id="icBack" class="btn-back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Volver</button>
+      <h2>Tu icono</h2>
+    </header>
+    <div class="panel-scroll">
+      <div class="icons-layout">
+        <div class="preview"><canvas id="pvCanvas" aria-label="Vista previa del icono en sus cinco formas"></canvas></div>
+        <div class="pickers">
+          <h3>Diseño</h3>
+          <div class="designs" id="gridDesign"></div>
+          <h3>Color principal</h3>
+          <div class="swatches" id="swC1"></div>
+          <h3>Color secundario</h3>
+          <div class="swatches" id="swC2"></div>
+          <label class="toggle"><input type="checkbox" id="optTrail"> Estela detrás del icono</label>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="scrSettings" class="screen shade-full" aria-label="Ajustes" hidden>
+    <header class="bar">
+      <button id="stBack" class="btn-back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Volver</button>
+      <h2>Ajustes</h2>
+    </header>
+    <div class="panel-scroll">
+      <div class="settings">
+        <label class="field" for="volMusic">Música <input type="range" id="volMusic" min="0" max="100"></label>
+        <label class="field" for="volSfx">Efectos <input type="range" id="volSfx" min="0" max="100"></label>
+        <label class="field" for="optFx">Gráficos
+          <select id="optFx"><option value="high">Alta calidad</option><option value="low">Ahorro (más fluido)</option></select>
+        </label>
+        <label class="field" for="optFps">Contador de FPS <input type="checkbox" id="optFps" style="width:20px;height:20px;accent-color:var(--volt)"></label>
+        <dl class="keys">
+          <dt>Saltar</dt><dd>Espacio, flecha arriba, W, clic o toque</dd>
+          <dt>Pausa</dt><dd>Esc o P</dd>
+          <dt>Reiniciar</dt><dd>R</dd>
+          <dt>Práctica</dt><dd>Z coloca un punto de control, X quita el último</dd>
+        </dl>
+        <div class="danger"><button id="btnReset" class="btn">Borrar progreso</button></div>
+      </div>
+    </div>
+  </section>
+
+  <div id="hud" hidden>
+    <div class="progress"><div class="track"><i id="pfill"></i></div><span id="ptext">0%</span></div>
+    <button id="btnPause" class="hud-btn" aria-label="Pausa"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="5" height="16" rx="1.2"/><rect x="14" y="4" width="5" height="16" rx="1.2"/></svg></button>
+    <div class="practice-ctl" id="pracCtl" hidden>
+      <button id="cpAdd" aria-label="Añadir punto de control"><svg viewBox="0 0 24 24"><path d="M12 3l8 9-8 9-8-9z" fill="rgba(125,255,107,0.35)" stroke="#7dff6b" stroke-width="2"/><path d="M12 8.5v7M8.5 12h7" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+      <button id="cpDel" aria-label="Quitar punto de control"><svg viewBox="0 0 24 24"><path d="M12 3l8 9-8 9-8-9z" fill="none" stroke="#7dff6b" stroke-width="2"/><path d="M8.5 12h7" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+    </div>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <div id="fps" hidden></div>
+  </div>
+
+  <section id="scrPause" class="screen overlay shade-full" aria-label="Pausa" hidden>
+    <div class="dialog">
+      <p class="eyebrow">En pausa</p>
+      <h2 id="pzName">Nivel</h2>
+      <div class="lv-bars" id="pzBars" style="--lv-a:#8ff6ff">
+        <div class="pbar-row"><span>Normal</span><div class="track"><i id="pzNormFill"></i></div><b id="pzNormPct">0%</b></div>
+        <div class="pbar-row"><span>Práctica</span><div class="track prac"><i id="pzPracFill"></i></div><b id="pzPracPct">0%</b></div>
+      </div>
+      <div class="stack">
+        <button id="pzResume" class="btn primary wide">Continuar</button>
+        <button id="pzRestart" class="btn">Reiniciar</button>
+        <button id="pzPractice" class="btn">Modo práctica</button>
+        <button id="pzExit" class="btn wide">Salir al menú</button>
+      </div>
+      <div class="vols">
+        <label for="pzMusic">Música <input type="range" id="pzMusic" min="0" max="100"></label>
+        <label for="pzSfx">Efectos <input type="range" id="pzSfx" min="0" max="100"></label>
+      </div>
+    </div>
+  </section>
+
+  <section id="scrWin" class="screen overlay" aria-label="Nivel completado" hidden>
+    <div class="dialog win">
+      <p class="eyebrow" id="wnName">Nivel</p>
+      <h2>¡Nivel completado!</h2>
+      <dl class="stats">
+        <div><dt>Intentos</dt><dd id="wnAtt">1</dd></div>
+        <div><dt>Saltos</dt><dd id="wnJumps">0</dd></div>
+        <div><dt>Tiempo</dt><dd id="wnTime">0:00</dd></div>
+      </dl>
+      <div class="wcoins" id="wnCoins"></div>
+      <p class="note" id="wnNote"></p>
+      <div class="stack">
+        <button id="wnMenu" class="btn">Menú</button>
+        <button id="wnRetry" class="btn">Repetir</button>
+        <button id="wnNext" class="btn primary wide">Siguiente nivel</button>
+      </div>
+    </div>
+  </section>
+</div>
+<script src="motor.js"></script>
+<script src="niveles.js"></script>
+<script src="musica.js"></script>
+<script src="graficos.js"></script>
+<script src="demos.js"></script>
+<script src="juego.js"></script>
+</body>
+</html>
