@@ -11,6 +11,7 @@ sudoku/index.html    Sudoku
 dulces/index.html    Dulces: junta tres iguales
 canonazo/index.html  Cañonazo: revienta las bolas
 reino/               Reino: construye y defiende (index.html y sus scripts)
+pulso-neon/          Pulso Neón: salta al ritmo de la música (index.html, sus scripts y herramientas/ para verificar los niveles)
 ```
 
 Los archivos de un juego (imágenes, sonidos, scripts) van dentro de su carpeta y se referencian con rutas relativas a esa carpeta.
